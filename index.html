@@ -1,0 +1,2935 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#070b14">
+<meta name="description" content="Donut Interest Speed Test — advanced browser-based internet speed test with download, upload, ping, jitter, packet loss and ISP info.">
+<title>Donut Interest Speed Test</title>
+<style>
+:root{
+  --accent:#22d3ee;
+  --accent-2:#a855f7;
+  --good:#34d399;
+  --warn:#fbbf24;
+  --bad:#f87171;
+
+  --bg:#070b14;
+  --bg-grad-1:rgba(34,211,238,.14);
+  --bg-grad-2:rgba(168,85,247,.14);
+  --card:rgba(255,255,255,.045);
+  --card-2:rgba(255,255,255,.03);
+  --border:rgba(255,255,255,.09);
+  --border-strong:rgba(255,255,255,.16);
+  --text:#e9eefb;
+  --text-dim:#9aa8c8;
+  --text-faint:#6b7a9c;
+  --track:rgba(255,255,255,.08);
+  --shadow:0 24px 60px rgba(0,0,0,.5);
+  --radius:18px;
+}
+html[data-theme="light"]{
+  --bg:#eef2fa;
+  --bg-grad-1:rgba(34,211,238,.28);
+  --bg-grad-2:rgba(168,85,247,.22);
+  --card:rgba(255,255,255,.75);
+  --card-2:rgba(255,255,255,.55);
+  --border:rgba(15,23,42,.10);
+  --border-strong:rgba(15,23,42,.20);
+  --text:#0f172a;
+  --text-dim:#4b5b7c;
+  --text-faint:#7d8aa5;
+  --track:rgba(15,23,42,.10);
+  --shadow:0 20px 50px rgba(30,41,59,.18);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  transition:background .3s ease,color .3s ease;
+}
+body.no-scroll{overflow:hidden}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--accent)}
+
+.bg-orbs{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.bg-orbs::before,.bg-orbs::after{
+  content:"";position:absolute;border-radius:50%;filter:blur(90px);opacity:.85;
+  animation:float 18s ease-in-out infinite alternate;
+}
+.bg-orbs::before{width:52vmax;height:52vmax;background:var(--bg-grad-1);top:-22vmax;left:-16vmax}
+.bg-orbs::after{width:46vmax;height:46vmax;background:var(--bg-grad-2);bottom:-20vmax;right:-14vmax;animation-delay:-8s}
+@keyframes float{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(4vmax,3vmax,0) scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.bg-orbs::before,.bg-orbs::after{animation:none}}
+
+.app{max-width:1120px;margin:0 auto;padding:18px 16px 64px;position:relative}
+
+.topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{
+  width:42px;height:42px;border-radius:13px;flex:0 0 auto;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;box-shadow:0 8px 24px rgba(34,211,238,.28);
+}
+.logo svg{width:23px;height:23px;stroke:#04121a;fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.brand h1{margin:0;font-size:19px;font-weight:750;letter-spacing:-.4px;line-height:1.15;white-space:nowrap}
+.brand h1 span{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{margin:1px 0 0;font-size:11px;color:var(--text-faint);letter-spacing:.5px;text-transform:uppercase;font-weight:600}
+
+.conn-chips{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 240px;justify-content:center}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;max-width:100%;
+  padding:6px 11px;border-radius:999px;font-size:12px;font-weight:600;
+  background:var(--card);border:1px solid var(--border);color:var(--text-dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  cursor:pointer;transition:border-color .15s,background .15s,transform .15s;
+}
+.chip:hover{border-color:var(--border-strong);background:var(--card-2)}
+.chip:active{transform:scale(.97)}
+.chip b{color:var(--text);font-weight:700}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:0 0 auto;box-shadow:0 0 0 3px rgba(52,211,153,.18)}
+.chip.loading .dot{background:var(--warn);box-shadow:0 0 0 3px rgba(251,191,36,.18);animation:pulse 1.2s infinite}
+.chip .v4{color:var(--accent)}
+.chip .v6{color:var(--accent-2)}
+.chip.copied{border-color:rgba(52,211,153,.6);background:rgba(52,211,153,.12)}
+@keyframes pulse{50%{opacity:.35}}
+
+.top-actions{display:flex;gap:8px;margin-left:auto}
+.icon-btn{
+  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+  background:var(--card);border:1px solid var(--border);color:var(--text-dim);
+  transition:transform .15s ease,color .15s ease,border-color .15s ease,background .15s ease;
+}
+.icon-btn:hover{color:var(--text);border-color:var(--border-strong);transform:translateY(-1px)}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn.on{color:var(--accent);border-color:var(--accent)}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:var(--shadow);
+  padding:18px;
+  margin-bottom:16px;
+}
+.card-title{
+  font-size:12px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--text-faint);margin:0 0 14px;display:flex;align-items:center;gap:8px;
+}
+.card-title svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.copy-all-btn{
+  background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);
+  border-radius:9px;padding:5px 11px;font-size:10.5px;font-weight:800;
+  letter-spacing:.7px;text-transform:uppercase;margin-left:auto;
+  transition:all .15s ease;
+}
+.copy-all-btn:hover{color:var(--text);border-color:var(--border-strong);background:var(--card)}
+.copy-all-btn:active{transform:scale(.95)}
+.copy-all-btn.copied{color:var(--good);border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.1)}
+
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:center}
+@media (max-width:820px){.hero{grid-template-columns:1fr;gap:8px}}
+
+.gauge-wrap{position:relative;width:100%;max-width:360px;margin:0 auto;aspect-ratio:1/1}
+.gauge-wrap svg{width:100%;height:100%;display:block;overflow:visible}
+.gauge-center{
+  position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);
+  text-align:center;width:80%;pointer-events:none;
+}
+.gauge-value{
+  font-size:clamp(38px,10vw,58px);font-weight:800;letter-spacing:-2.5px;line-height:1;
+  font-variant-numeric:tabular-nums;transition:color .3s;
+  background:linear-gradient(180deg,var(--text),var(--text-dim));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.gauge-unit{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:1.5px;margin-top:5px;text-transform:uppercase}
+.gauge-phase{
+  font-size:11px;font-weight:700;color:var(--text-faint);letter-spacing:1.6px;
+  text-transform:uppercase;margin-top:9px;
+}
+
+.hero-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.controls{display:flex;gap:10px;flex-wrap:wrap}
+.btn{
+  border-radius:14px;padding:15px 22px;font-weight:750;font-size:15px;letter-spacing:.2px;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  transition:transform .15s ease,box-shadow .2s ease,opacity .2s ease;
+  border:1px solid transparent;white-space:nowrap;
+}
+.btn:active{transform:scale(.97)}
+.btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btn-primary{
+  flex:1 1 190px;
+  background:linear-gradient(120deg,var(--accent),var(--accent-2));
+  color:#04121a;box-shadow:0 12px 34px rgba(34,211,238,.3);
+}
+html[data-theme="light"] .btn-primary{color:#fff}
+.btn-primary:hover{box-shadow:0 16px 40px rgba(34,211,238,.42)}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+.btn-ghost{background:var(--card);border-color:var(--border-strong);color:var(--text)}
+.btn-ghost:hover{background:var(--card-2)}
+.btn-sm{padding:9px 14px;font-size:13px;border-radius:11px}
+.btn-danger{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.35);color:var(--bad)}
+
+.progress-track{height:7px;border-radius:999px;background:var(--track);overflow:hidden}
+.progress-fill{
+  height:100%;width:0%;border-radius:999px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  transition:width .35s ease;
+}
+
+.status-bar{
+  display:flex;flex-wrap:wrap;gap:10px 18px;font-size:11.5px;color:var(--text-faint);
+  font-weight:600;letter-spacing:.3px;
+}
+.status-bar span{display:inline-flex;align-items:center;gap:6px}
+.status-bar b{color:var(--text-dim);font-variant-numeric:tabular-nums}
+
+.grade-badge{
+  display:none;align-items:center;gap:14px;padding:13px 16px;border-radius:15px;
+  background:var(--card);border:1px solid var(--border);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.grade-badge.show{display:flex;animation:fadeIn .4s ease}
+.grade-badge .g-score{
+  font-size:38px;font-weight:800;letter-spacing:-2px;line-height:1;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  min-width:62px;text-align:center;
+}
+.grade-badge .g-info{flex:1;min-width:0}
+.grade-badge .g-title{font-size:10.5px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--text-faint)}
+.grade-badge .g-label{font-size:12.5px;font-weight:650;color:var(--text);margin-top:4px;line-height:1.45}
+.grade-badge.grade-a{border-color:rgba(52,211,153,.5)}
+.grade-badge.grade-b{border-color:rgba(34,211,238,.5)}
+.grade-badge.grade-c{border-color:rgba(251,191,36,.5)}
+.grade-badge.grade-d{border-color:rgba(251,146,60,.5)}
+.grade-badge.grade-f{border-color:rgba(248,113,113,.5)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin-bottom:16px}
+.metric{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:15px;
+  position:relative;overflow:hidden;transition:border-color .25s,transform .25s,background .25s;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  cursor:pointer;
+}
+.metric:hover{border-color:var(--border-strong)}
+.metric.active{border-color:var(--accent);transform:translateY(-2px)}
+.metric.copied{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.5)}
+.metric.copied::after{
+  content:"✓";position:absolute;top:9px;right:11px;color:var(--good);
+  font-weight:800;font-size:13px;animation:checkPop .3s ease;
+}
+@keyframes checkPop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+.metric .m-label{
+  font-size:10.5px;font-weight:750;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--text-faint);display:flex;align-items:center;gap:7px;margin-bottom:8px;
+}
+.metric .m-label svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.metric .m-value{
+  font-size:27px;font-weight:800;letter-spacing:-1.2px;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--text);
+}
+.metric .m-unit{font-size:12px;font-weight:700;color:var(--text-faint);margin-left:5px;letter-spacing:.4px}
+.metric .m-sub{font-size:11px;color:var(--text-faint);margin-top:7px;font-weight:600}
+.metric.dl .m-value{color:var(--accent)}
+.metric.ul .m-value{color:var(--accent-2)}
+
+.chart-card{padding:16px 16px 10px}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.legend{display:flex;gap:14px;font-size:11.5px;font-weight:700;color:var(--text-faint)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.chart-box{position:relative;width:100%;height:190px}
+.chart-box canvas{width:100%;height:100%;display:block;border-radius:10px}
+.chart-empty{
+  position:absolute;inset:0;display:grid;place-items:center;color:var(--text-faint);
+  font-size:12.5px;font-weight:600;pointer-events:none;
+}
+
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.info-row{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px 13px;border-radius:12px;background:var(--card-2);border:1px solid var(--border);
+  font-size:12.5px;min-width:0;position:relative;
+  cursor:pointer;transition:background .15s,border-color .15s,transform .12s;
+}
+.info-row:hover{background:rgba(34,211,238,.08);border-color:var(--border-strong)}
+.info-row:active{transform:scale(.99)}
+.info-row.copied{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.5)}
+.info-row.copied::after{
+  content:"✓";position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  color:var(--good);font-weight:800;font-size:14px;animation:checkPop .3s ease;
+}
+.info-row .k{color:var(--text-faint);font-weight:700;letter-spacing:.4px;text-transform:uppercase;font-size:10.5px;flex:0 0 auto}
+.info-row .v{color:var(--text);font-weight:650;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.info-row.v4 .v{color:var(--accent)}
+.info-row.v6 .v{color:var(--accent-2)}
+
+.scrim{
+  position:fixed;inset:0;background:rgba(2,6,18,.62);backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;z-index:80;
+}
+.scrim.show{opacity:1;visibility:visible}
+.panel{
+  position:fixed;top:0;right:0;height:100%;width:min(460px,100%);z-index:90;
+  background:var(--bg);border-left:1px solid var(--border);
+  transform:translateX(102%);transition:transform .34s cubic-bezier(.22,1,.36,1);
+  display:flex;flex-direction:column;box-shadow:-24px 0 60px rgba(0,0,0,.45);
+}
+html[data-theme="light"] .panel{background:#f7f9ff}
+.panel.open{transform:translateX(0)}
+@media (max-width:520px){.panel{width:100%;border-left:none}}
+.panel-head{
+  display:flex;align-items:center;gap:12px;padding:16px 18px;
+  border-bottom:1px solid var(--border);flex:0 0 auto;
+  padding-top:calc(16px + env(safe-area-inset-top));
+}
+.panel-head h2{margin:0;font-size:16px;font-weight:750;letter-spacing:-.2px;flex:1}
+.panel-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 18px 40px;flex:1 1 auto}
+.panel-foot{
+  padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;flex:0 0 auto;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+}
+
+.settings-section{margin-bottom:22px}
+.settings-section > h3{
+  font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--accent);margin:0 0 10px;display:flex;align-items:center;gap:8px;
+}
+.setting{
+  display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:13px;
+  background:var(--card-2);border:1px solid var(--border);margin-bottom:8px;
+}
+.setting.col{flex-direction:column;align-items:stretch;gap:9px}
+.setting-text{flex:1 1 auto;min-width:0}
+.setting-text label{display:block;font-size:13.5px;font-weight:650;color:var(--text);cursor:pointer}
+.setting-text .hint{font-size:11px;color:var(--text-faint);margin-top:3px;line-height:1.45}
+.setting input[type="text"],.setting input[type="number"],.setting select{
+  background:var(--bg);border:1px solid var(--border-strong);border-radius:10px;
+  padding:8px 11px;font-size:13px;outline:none;min-width:0;max-width:100%;
+  transition:border-color .2s;color:var(--text);
+}
+.setting input[type="text"]:focus,.setting input[type="number"]:focus,.setting select:focus{border-color:var(--accent)}
+.setting input[type="number"]{width:92px;text-align:center}
+.setting select{min-width:150px;cursor:pointer;appearance:none;padding-right:30px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--text-faint) 50%),linear-gradient(135deg,var(--text-faint) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
+.setting input[type="range"]{
+  -webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:999px;
+  background:var(--track);outline:none;margin:6px 0 2px;
+}
+.setting input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);cursor:pointer;border:3px solid var(--bg);
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.setting input[type="range"]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg);
+}
+.setting input[type="color"]{
+  -webkit-appearance:none;appearance:none;width:46px;height:32px;border:1px solid var(--border-strong);
+  border-radius:9px;background:transparent;padding:2px;cursor:pointer;
+}
+.setting input[type="color"]::-webkit-color-swatch-wrapper{padding:0}
+.setting input[type="color"]::-webkit-color-swatch{border:none;border-radius:6px}
+.range-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.range-val{font-size:12.5px;font-weight:750;color:var(--accent);font-variant-numeric:tabular-nums;flex:0 0 auto}
+
+.switch{position:relative;display:inline-block;width:48px;height:28px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch .slider{
+  position:absolute;inset:0;background:var(--track);border-radius:999px;
+  transition:background .25s;border:1px solid var(--border);
+}
+.switch .slider::before{
+  content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;border-radius:50%;
+  background:#fff;transition:transform .25s cubic-bezier(.3,1.5,.6,1);box-shadow:0 2px 6px rgba(0,0,0,.35);
+}
+.switch input:checked + .slider{background:linear-gradient(120deg,var(--accent),var(--accent-2));border-color:transparent}
+.switch input:checked + .slider::before{transform:translateX(20px)}
+
+.hist-item{
+  display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:13px;
+  background:var(--card-2);border:1px solid var(--border);margin-bottom:8px;
+}
+.hist-item .h-date{font-size:11px;color:var(--text-faint);font-weight:650;flex:0 0 auto;width:74px;line-height:1.35}
+.hist-item .h-stats{display:flex;gap:14px;flex:1 1 auto;flex-wrap:wrap;min-width:0}
+.hist-item .h-stat{font-size:13px;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hist-item .h-stat small{display:block;font-size:9.5px;color:var(--text-faint);font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:2px}
+.hist-del{color:var(--text-faint);padding:6px;border-radius:8px;flex:0 0 auto}
+.hist-del:hover{color:var(--bad);background:rgba(248,113,113,.1)}
+.hist-del svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.empty-state{text-align:center;padding:44px 16px;color:var(--text-faint);font-size:13px;font-weight:600}
+.empty-state svg{width:42px;height:42px;stroke:currentColor;fill:none;stroke-width:1.5;opacity:.4;margin-bottom:12px;stroke-linecap:round;stroke-linejoin:round}
+
+.toasts{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:9px;align-items:center;pointer-events:none;width:calc(100% - 32px);max-width:420px}
+.toast{
+  background:rgba(16,22,38,.97);border:1px solid var(--border-strong);color:#e9eefb;
+  padding:12px 18px;border-radius:13px;font-size:13px;font-weight:650;
+  box-shadow:0 14px 40px rgba(0,0,0,.5);animation:toastIn .3s cubic-bezier(.22,1,.36,1);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);text-align:center;max-width:100%;
+}
+.toast.ok{border-color:rgba(52,211,153,.5)}
+.toast.err{border-color:rgba(248,113,113,.5)}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+
+.footer{text-align:center;font-size:11.5px;color:var(--text-faint);margin-top:26px;line-height:1.7;font-weight:600}
+.footer b{color:var(--text-dim)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.compact .card{padding:13px;margin-bottom:11px}
+body.compact .metric{padding:11px}
+body.compact .metric .m-value{font-size:22px}
+body.compact .chart-box{height:140px}
+body.hide-gauge .gauge-wrap{display:none}
+body.hide-chart .chart-card{display:none}
+body.hide-info .info-card{display:none}
+*{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 20v-9"/><path d="M6.5 13.5a7 7 0 0 1 11 0"/><path d="M3.5 10a11 11 0 0 1 17 0"/><circle cx="12" cy="20" r="1.2" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div>
+        <h1>Donut Interest <span>Speed Test</span></h1>
+        <p>Network Diagnostics</p>
+      </div>
+    </div>
+
+    <div class="conn-chips" id="connChips">
+      <span class="chip loading" id="chipIp" title="Click to copy IPv4"><i class="dot"></i>IPv4: <b>…</b></span>
+      <span class="chip loading" id="chipIp6" title="Click to copy IPv6"><i class="dot"></i>IPv6: <b>…</b></span>
+      <span class="chip" id="chipIsp" title="Click to copy ISP">ISP: <b>…</b></span>
+      <span class="chip" id="chipLoc" title="Click to copy location">Location: <b>…</b></span>
+    </div>
+
+    <div class="top-actions">
+      <button class="icon-btn" id="btnHistory" title="History" aria-label="Test history">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+      </button>
+      <button class="icon-btn" id="btnTheme" title="Toggle theme" aria-label="Toggle theme">
+        <svg viewBox="0 0 24 24" id="themeIcon"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <button class="icon-btn" id="btnSettings" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="card hero">
+    <div class="gauge-wrap" id="gaugeWrap">
+      <svg id="gauge" viewBox="0 0 320 320" role="img" aria-label="Speed gauge"></svg>
+      <div class="gauge-center">
+        <div class="gauge-value" id="gaugeValue">0.00</div>
+        <div class="gauge-unit" id="gaugeUnit">Mbps</div>
+        <div class="gauge-phase" id="gaugePhase">Ready</div>
+      </div>
+    </div>
+
+    <div class="hero-side">
+      <div class="controls">
+        <button class="btn btn-primary" id="btnStart">
+          <svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+          <span id="btnStartLabel">Start Test</span>
+        </button>
+        <button class="btn btn-ghost" id="btnStop" hidden>
+          <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Stop
+        </button>
+      </div>
+
+      <div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <div class="status-bar">
+        <span>Engine: <b id="stEngine">—</b></span>
+        <span>Streams: <b id="stStreams">0</b></span>
+        <span>Data: <b id="stData">0 B</b></span>
+        <span>Elapsed: <b id="stTime">0.0s</b></span>
+      </div>
+
+      <div class="grade-badge" id="gradeBadge"></div>
+    </div>
+  </section>
+
+  <section class="metrics" id="metrics">
+    <div class="metric dl" id="mDown" title="Click to copy download speed">
+      <div class="m-label"><svg viewBox="0 0 24 24"><path d="M12 3v14"/><path d="M6 11l6 6 6-6"/><path d="M4 21h16"/></svg>Download</div>
+      <div class="m-value" id="vDown">—<span class="m-unit" id="uDown">Mbps</span></div>
+      <div class="m-sub" id="sDown">Not tested</div>
+    </div>
+    <div class="metric ul" id="mUp" title="Click to copy upload speed">
+      <div class="m-label"><svg viewBox="0 0 24 24"><path d="M12 21V7"/><path d="M6 13l6-6 6 6"/><path d="M4 3h16"/></svg>Upload</div>
+      <div class="m-value" id="vUp">—<span class="m-unit" id="uUp">Mbps</span></div>
+      <div class="m-sub" id="sUp">Not tested</div>
+    </div>
+    <div class="metric" id="mPing" title="Click to copy ping">
+      <div class="m-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Ping</div>
+      <div class="m-value" id="vPing">—<span class="m-unit">ms</span></div>
+      <div class="m-sub" id="sPing">Not tested</div>
+    </div>
+    <div class="metric" id="mJitter" title="Click to copy jitter">
+      <div class="m-label"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-7 4 14 3-9 2 2h4"/></svg>Jitter</div>
+      <div class="m-value" id="vJitter">—<span class="m-unit">ms</span></div>
+      <div class="m-sub" id="sJitter">Not tested</div>
+    </div>
+    <div class="metric" id="mLoss" title="Click to copy packet loss">
+      <div class="m-label"><svg viewBox="0 0 24 24"><path d="M18 6L6 18"/><path d="M6 6l12 12"/><circle cx="12" cy="12" r="9"/></svg>Packet Loss</div>
+      <div class="m-value" id="vLoss">—<span class="m-unit">%</span></div>
+      <div class="m-sub" id="sLoss">Not tested</div>
+    </div>
+  </section>
+
+  <section class="card chart-card" id="chartCard">
+    <div class="chart-head">
+      <div class="card-title" style="margin:0">
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        Live Throughput
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--accent)"></i>Download</span>
+        <span><i style="background:var(--accent-2)"></i>Upload</span>
+      </div>
+    </div>
+    <div class="chart-box">
+      <canvas id="chart"></canvas>
+      <div class="chart-empty" id="chartEmpty">Run a test to see live throughput</div>
+    </div>
+  </section>
+
+  <section class="card info-card" id="infoCard">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg>
+      Connection Details
+      <button class="copy-all-btn" id="btnCopyAllInfo" type="button" title="Copy all details">Copy all</button>
+    </div>
+    <div class="info-grid" id="infoGrid"></div>
+  </section>
+
+  <div class="footer">
+    <b>Donut Interest Speed Test</b> · Runs entirely in your browser · No data is stored on any server<br>
+    Measurements use parallel HTTP streams against a global CDN edge. Click any detail to copy it.
+  </div>
+</div>
+
+<aside class="panel" id="settingsPanel" aria-hidden="true">
+  <div class="panel-head">
+    <h2>Settings</h2>
+    <button class="icon-btn" data-close="settingsPanel" aria-label="Close settings">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="panel-body" id="settingsBody"></div>
+  <div class="panel-foot">
+    <button class="btn btn-ghost btn-sm" id="btnResetSettings">Reset defaults</button>
+    <button class="btn btn-ghost btn-sm" id="btnExportCfg">Export config</button>
+    <button class="btn btn-ghost btn-sm" id="btnImportCfg">Import config</button>
+  </div>
+</aside>
+
+<aside class="panel" id="historyPanel" aria-hidden="true">
+  <div class="panel-head">
+    <h2>Test History</h2>
+    <button class="icon-btn" data-close="historyPanel" aria-label="Close history">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="panel-body" id="historyBody"></div>
+  <div class="panel-foot">
+    <button class="btn btn-ghost btn-sm" id="btnExportCsv">Export CSV</button>
+    <button class="btn btn-ghost btn-sm" id="btnExportJson">Export JSON</button>
+    <button class="btn btn-danger btn-sm" id="btnClearHistory" style="margin-left:auto">Clear all</button>
+  </div>
+</aside>
+
+<div class="scrim" id="scrim"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(function () {
+"use strict";
+
+var $  = function (s, r) { return (r || document).querySelector(s); };
+var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+var clamp = function (v, a, b) { return v < a ? a : (v > b ? b : v); };
+var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+var now = function () {
+  return (window.performance && performance.now) ? performance.now() : Date.now();
+};
+
+function el(tag, cls, html) {
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+}
+
+function fmtBytes(b) {
+  if (!b || b < 1) return "0 B";
+  var u = ["B", "KB", "MB", "GB", "TB"], i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return (i === 0 ? b.toFixed(0) : b.toFixed(b < 10 ? 2 : 1)) + " " + u[i];
+}
+
+function fmtTime(ms) {
+  if (ms < 1000) return Math.round(ms) + " ms";
+  var s = ms / 1000;
+  if (s < 60) return s.toFixed(1) + " s";
+  return Math.floor(s / 60) + "m " + Math.round(s % 60) + "s";
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function withTimeout(promise, ms, onTimeout) {
+  return new Promise(function (resolve, reject) {
+    var done = false;
+    var t = setTimeout(function () {
+      if (done) return;
+      done = true;
+      if (onTimeout) { try { onTimeout(); } catch (e) {} }
+      reject(new Error("Timeout"));
+    }, ms);
+    promise.then(function (v) {
+      if (done) return; done = true; clearTimeout(t); resolve(v);
+    }, function (e) {
+      if (done) return; done = true; clearTimeout(t); reject(e);
+    });
+  });
+}
+
+var AbortCtor = (typeof AbortController !== "undefined") ? AbortController :
+  function () { this.signal = undefined; this.abort = function () {}; };
+
+var SUPPORTS_STREAM = (function () {
+  try {
+    if (typeof fetch !== "function") return false;
+    if (typeof ReadableStream !== "function") return false;
+    var rs = new ReadableStream({ start: function (c) { c.enqueue(new Uint8Array(1)); c.close(); } });
+    var r = new Response(rs);
+    return !!(r.body && typeof r.body.getReader === "function");
+  } catch (e) { return false; }
+})();
+
+var SCHEMA = [
+  {
+    id: "test", title: "Test Parameters", icon: "⚡",
+    items: [
+      { key: "downloadDuration", label: "Download duration", type: "select", def: 10,
+        options: [[5,"5 seconds"],[10,"10 seconds"],[15,"15 seconds"],[20,"20 seconds"],[30,"30 seconds"],[45,"45 seconds"],[60,"60 seconds"]],
+        hint: "How long the download phase runs." },
+      { key: "uploadDuration", label: "Upload duration", type: "select", def: 10,
+        options: [[5,"5 seconds"],[10,"10 seconds"],[15,"15 seconds"],[20,"20 seconds"],[30,"30 seconds"],[45,"45 seconds"],[60,"60 seconds"]],
+        hint: "How long the upload phase runs." },
+      { key: "parallel", label: "Parallel connections", type: "range", def: 6, min: 1, max: 16, step: 1,
+        hint: "More streams give a more accurate reading on fast links." },
+      { key: "pingCount", label: "Ping samples", type: "range", def: 12, min: 4, max: 40, step: 1,
+        hint: "Number of latency probes used for ping / jitter / loss." },
+      { key: "testOrder", label: "Test sequence", type: "select", def: "full",
+        options: [["full","Ping → Download → Upload"],["full-up","Ping → Upload → Download"],
+                  ["download","Ping → Download only"],["upload","Ping → Upload only"],["ping","Ping only"]] },
+      { key: "warmup", label: "Warm-up request", type: "toggle", def: true,
+        hint: "Opens the TCP/TLS connection before measuring so latency isn't skewed." },
+      { key: "measureLoss", label: "Measure packet loss", type: "toggle", def: true },
+      { key: "adaptive", label: "Adaptive chunk sizing", type: "toggle", def: true,
+        hint: "Automatically scales transfer chunk size to your connection speed." },
+      { key: "minChunkKB", label: "Minimum chunk size (KB)", type: "number", def: 256, min: 16, max: 10240 },
+      { key: "maxChunkMB", label: "Maximum chunk size (MB)", type: "number", def: 64, min: 1, max: 256 },
+      { key: "timeout", label: "Request timeout (s)", type: "number", def: 20, min: 3, max: 120 }
+    ]
+  },
+  {
+    id: "server", title: "Server & Engine", icon: "🌐",
+    items: [
+      { key: "serverPreset", label: "Test server", type: "select", def: "cloudflare",
+        options: [["cloudflare","Cloudflare edge (automatic)"],["custom","Custom server"]],
+        hint: "Cloudflare picks the closest edge automatically." },
+      { key: "customBase", label: "Custom base URL", type: "text", def: "", placeholder: "https://example.com/speed",
+        hint: "Must send CORS headers (Access-Control-Allow-Origin)." },
+      { key: "customDownPath", label: "Download path", type: "text", def: "__down", placeholder: "__down",
+        hint: "Called as <base>/<path>?bytes=N" },
+      { key: "customUpPath", label: "Upload path", type: "text", def: "__up", placeholder: "__up" },
+      { key: "customMetaPath", label: "Meta / info path", type: "text", def: "meta", placeholder: "meta",
+        hint: "Should return JSON with ip / isp fields (optional)." },
+      { key: "engine", label: "Transfer engine", type: "select", def: "auto",
+        options: [["auto","Automatic (best available)"],["fetch","Fetch streams"],["xhr","XHR (legacy)"]],
+        hint: "Fetch streams use less memory. XHR works on older browsers." },
+      { key: "cacheBust", label: "Cache busting", type: "toggle", def: true }
+    ]
+  },
+  {
+    id: "display", title: "Display", icon: "🎨",
+    items: [
+      { key: "unit", label: "Speed unit", type: "select", def: "Mbps",
+        options: [["Mbps","Mbps — megabits per second"],["MBps","MB/s — megabytes per second"],
+                  ["Gbps","Gbps — gigabits per second"],["Kbps","Kbps — kilobits per second"]] },
+      { key: "decimals", label: "Decimal places", type: "range", def: 2, min: 0, max: 3, step: 1 },
+      { key: "theme", label: "Theme", type: "select", def: "auto",
+        options: [["auto","Follow system"],["dark","Dark"],["light","Light"]] },
+      { key: "accent", label: "Accent colour", type: "color", def: "#22d3ee" },
+      { key: "showGauge", label: "Analog gauge", type: "toggle", def: true },
+      { key: "showChart", label: "Live throughput chart", type: "toggle", def: true },
+      { key: "showAdvancedInfo", label: "Connection details panel", type: "toggle", def: true },
+      { key: "reduceMotion", label: "Reduce motion", type: "toggle", def: false },
+      { key: "compact", label: "Compact layout", type: "toggle", def: false }
+    ]
+  },
+  {
+    id: "data", title: "Data & Privacy", icon: "💾",
+    items: [
+      { key: "autoStart", label: "Auto-start test on page load", type: "toggle", def: false },
+      { key: "saveHistory", label: "Save result history locally", type: "toggle", def: true },
+      { key: "historyLimit", label: "History entries to keep", type: "range", def: 25, min: 5, max: 100, step: 5 },
+      { key: "ipLookup", label: "Look up IP / ISP information", type: "toggle", def: true,
+        hint: "Queries a public endpoint for your IPv4, IPv6, ISP and approximate location." },
+      { key: "webrtcLocalIp", label: "Detect local IP (WebRTC)", type: "toggle", def: true,
+        hint: "Discovers your LAN IP address using WebRTC ICE candidates. Disable for privacy." },
+      { key: "platformInfo", label: "Detect browser & device info", type: "toggle", def: true,
+        hint: "Adds your browser, OS, device type and screen size to the details panel." },
+      { key: "showGrade", label: "Show connection grade after test", type: "toggle", def: true,
+        hint: "Displays an A+ to F grade based on speed, latency and jitter." },
+      { key: "wakeLock", label: "Keep screen awake during test", type: "toggle", def: true },
+      { key: "autoCopy", label: "Copy summary after test", type: "toggle", def: false }
+    ]
+  }
+];
+
+var DEFAULTS = (function () {
+  var d = {};
+  SCHEMA.forEach(function (sec) {
+    sec.items.forEach(function (it) { d[it.key] = it.def; });
+  });
+  return d;
+})();
+
+var LS_KEY = "speedtest.pro.v1";
+
+var Store = {
+  settings: {},
+  history: []
+};
+
+function loadStore() {
+  var raw = null;
+  try { raw = localStorage.getItem(LS_KEY); } catch (e) {}
+  var parsed = {};
+  if (raw) { try { parsed = JSON.parse(raw) || {}; } catch (e) { parsed = {}; } }
+
+  Store.settings = {};
+  for (var k in DEFAULTS) { if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) Store.settings[k] = DEFAULTS[k]; }
+  if (parsed.settings) {
+    for (var k2 in parsed.settings) {
+      if (Object.prototype.hasOwnProperty.call(Store.settings, k2)) {
+        Store.settings[k2] = parsed.settings[k2];
+      }
+    }
+  }
+  Store.history = Array.isArray(parsed.history) ? parsed.history : [];
+}
+
+function saveStore() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      settings: Store.settings,
+      history: Store.history.slice(0, 100)
+    }));
+  } catch (e) {}
+}
+
+var S = Store.settings;
+
+var dom = {
+  gauge:        $("#gauge"),
+  gaugeValue:   $("#gaugeValue"),
+  gaugeUnit:    $("#gaugeUnit"),
+  gaugePhase:   $("#gaugePhase"),
+  gradeBadge:   $("#gradeBadge"),
+  btnStart:     $("#btnStart"),
+  btnStartLbl:  $("#btnStartLabel"),
+  btnStop:      $("#btnStop"),
+  progress:     $("#progressFill"),
+  stEngine:     $("#stEngine"),
+  stStreams:    $("#stStreams"),
+  stData:       $("#stData"),
+  stTime:       $("#stTime"),
+  vDown:        $("#vDown"),
+  vUp:          $("#vUp"),
+  vPing:        $("#vPing"),
+  vJitter:      $("#vJitter"),
+  vLoss:        $("#vLoss"),
+  uDown:        $("#uDown"),
+  uUp:          $("#uUp"),
+  sDown:        $("#sDown"),
+  sUp:          $("#sUp"),
+  sPing:        $("#sPing"),
+  sJitter:      $("#sJitter"),
+  sLoss:        $("#sLoss"),
+  mDown:        $("#mDown"),
+  mUp:          $("#mUp"),
+  mPing:        $("#mPing"),
+  mJitter:      $("#mJitter"),
+  mLoss:        $("#mLoss"),
+  chart:        $("#chart"),
+  chartEmpty:   $("#chartEmpty"),
+  infoGrid:     $("#infoGrid"),
+  settingsPanel:$("#settingsPanel"),
+  historyPanel: $("#historyPanel"),
+  settingsBody: $("#settingsBody"),
+  historyBody:  $("#historyBody"),
+  scrim:        $("#scrim"),
+  toasts:       $("#toasts"),
+  chipIp:       $("#chipIp"),
+  chipIp6:      $("#chipIp6"),
+  chipIsp:      $("#chipIsp"),
+  chipLoc:      $("#chipLoc"),
+  chartCard:    $("#chartCard"),
+  infoCard:     $("#infoCard")
+};
+
+var ctx = dom.chart ? dom.chart.getContext("2d") : null;
+
+function toast(msg, kind, ms) {
+  var t = el("div", "toast" + (kind ? " " + kind : ""), escapeHtml(msg));
+  dom.toasts.appendChild(t);
+  setTimeout(function () {
+    t.style.transition = "opacity .3s, transform .3s";
+    t.style.opacity = "0";
+    t.style.transform = "translateY(10px)";
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 320);
+  }, ms || 2600);
+}
+
+function legacyCopy(text) {
+  try {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok;
+  } catch (e) { return false; }
+}
+
+function copyToClipboard(text) {
+  return new Promise(function (resolve) {
+    if (text == null) { resolve(false); return; }
+    text = String(text);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { resolve(true); },
+          function () { resolve(legacyCopy(text)); });
+      } else {
+        resolve(legacyCopy(text));
+      }
+    } catch (e) { resolve(legacyCopy(text)); }
+  });
+}
+
+function flashCopied(node, cls, ms) {
+  if (!node) return;
+  node.classList.add(cls || "copied");
+  setTimeout(function () { node.classList.remove(cls || "copied"); }, ms || 900);
+}
+
+var UNIT_DEF = {
+  Mbps: { factor: 8e-6, label: "Mbps", fromBytes: 8 / 1e6 },
+  MBps: { factor: 1e-6, label: "MB/s", fromBytes: 1 / 1e6 },
+  Gbps: { factor: 8e-9, label: "Gbps", fromBytes: 8 / 1e9 },
+  Kbps: { factor: 8e-3, label: "Kbps", fromBytes: 8 / 1e3 }
+};
+
+function unitInfo() { return UNIT_DEF[S.unit] || UNIT_DEF.Mbps; }
+
+function toDisplay(bps) {
+  return bps * unitInfo().fromBytes;
+}
+
+function fmtSpeed(bps) {
+  var v = toDisplay(bps);
+  if (!isFinite(v) || v < 0) v = 0;
+  var d = Number(S.decimals);
+  if (!isFinite(d)) d = 2;
+  return v.toFixed(d);
+}
+
+var TICKS = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+var G = { cx: 160, cy: 160, r: 116, start: 135, end: 405 };
+var gaugeEls = { progress: null, needle: null, glow: null };
+
+function polar(cx, cy, r, deg) {
+  var a = deg * Math.PI / 180;
+  return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+}
+
+function arcPath(cx, cy, r, a0, a1) {
+  if (Math.abs(a1 - a0) < 0.2) return "";
+  var p0 = polar(cx, cy, r, a0);
+  var p1 = polar(cx, cy, r, a1);
+  var large = Math.abs(a1 - a0) > 180 ? 1 : 0;
+  var sweep = a1 > a0 ? 1 : 0;
+  return "M " + p0.x.toFixed(2) + " " + p0.y.toFixed(2) +
+         " A " + r + " " + r + " 0 " + large + " " + sweep + " " +
+         p1.x.toFixed(2) + " " + p1.y.toFixed(2);
+}
+
+function valueToFrac(v) {
+  v = Math.max(0, v || 0);
+  var last = TICKS[TICKS.length - 1];
+  if (v >= last) return 1;
+  for (var i = 0; i < TICKS.length - 1; i++) {
+    if (v <= TICKS[i + 1]) {
+      var t = (v - TICKS[i]) / (TICKS[i + 1] - TICKS[i]);
+      return (i + t) / (TICKS.length - 1);
+    }
+  }
+  return 1;
+}
+
+function buildGauge() {
+  var svg = dom.gauge;
+  if (!svg) return;
+  var NS = "http://www.w3.org/2000/svg";
+  svg.innerHTML = "";
+
+  var defs = document.createElementNS(NS, "defs");
+  var gradId = "gaugeGrad";
+  var grad = document.createElementNS(NS, "linearGradient");
+  grad.setAttribute("id", gradId);
+  grad.setAttribute("x1", "0%"); grad.setAttribute("y1", "0%");
+  grad.setAttribute("x2", "100%"); grad.setAttribute("y2", "100%");
+  var s1 = document.createElementNS(NS, "stop");
+  s1.setAttribute("offset", "0%"); s1.setAttribute("stop-color", "var(--accent)");
+  var s2 = document.createElementNS(NS, "stop");
+  s2.setAttribute("offset", "100%"); s2.setAttribute("stop-color", "var(--accent-2)");
+  grad.appendChild(s1); grad.appendChild(s2);
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  var track = document.createElementNS(NS, "path");
+  track.setAttribute("d", arcPath(G.cx, G.cy, G.r, G.start, G.end));
+  track.setAttribute("fill", "none");
+  track.setAttribute("stroke", "var(--track)");
+  track.setAttribute("stroke-width", "13");
+  track.setAttribute("stroke-linecap", "round");
+  svg.appendChild(track);
+
+  var prog = document.createElementNS(NS, "path");
+  prog.setAttribute("fill", "none");
+  prog.setAttribute("stroke", "url(#" + gradId + ")");
+  prog.setAttribute("stroke-width", "13");
+  prog.setAttribute("stroke-linecap", "round");
+  prog.style.filter = "drop-shadow(0 0 8px rgba(34,211,238,.45))";
+  svg.appendChild(prog);
+  gaugeEls.progress = prog;
+
+  for (var i = 0; i < TICKS.length; i++) {
+    var frac = i / (TICKS.length - 1);
+    var ang = G.start + frac * (G.end - G.start);
+    var p1 = polar(G.cx, G.cy, G.r - 15, ang);
+    var p2 = polar(G.cx, G.cy, G.r - (i % 2 === 0 ? 26 : 22), ang);
+    var tk = document.createElementNS(NS, "line");
+    tk.setAttribute("x1", p1.x.toFixed(1)); tk.setAttribute("y1", p1.y.toFixed(1));
+    tk.setAttribute("x2", p2.x.toFixed(1)); tk.setAttribute("y2", p2.y.toFixed(1));
+    tk.setAttribute("stroke", "var(--text-faint)");
+    tk.setAttribute("stroke-width", i % 2 === 0 ? "2" : "1.2");
+    tk.setAttribute("stroke-linecap", "round");
+    tk.setAttribute("opacity", i % 2 === 0 ? ".85" : ".45");
+    svg.appendChild(tk);
+
+    if (i % 2 === 0) {
+      var lp = polar(G.cx, G.cy, G.r - 40, ang);
+      var tx = document.createElementNS(NS, "text");
+      tx.setAttribute("x", lp.x.toFixed(1));
+      tx.setAttribute("y", (lp.y + 4).toFixed(1));
+      tx.setAttribute("text-anchor", "middle");
+      tx.setAttribute("font-size", "11");
+      tx.setAttribute("font-weight", "700");
+      tx.setAttribute("fill", "var(--text-faint)");
+      tx.textContent = TICKS[i];
+      svg.appendChild(tx);
+    }
+  }
+
+  var needle = document.createElementNS(NS, "g");
+  var poly = document.createElementNS(NS, "polygon");
+  var cx = G.cx, cy = G.cy;
+  poly.setAttribute("points",
+    (cx - 5) + "," + (cy + 6) + " " +
+    (cx + 5) + "," + (cy + 6) + " " +
+    (cx + 2) + "," + (cy - G.r + 34) + " " +
+    (cx - 2) + "," + (cy - G.r + 34));
+  poly.setAttribute("fill", "var(--text)");
+  poly.setAttribute("opacity", ".9");
+  needle.appendChild(poly);
+  var hub = document.createElementNS(NS, "circle");
+  hub.setAttribute("cx", cx); hub.setAttribute("cy", cy); hub.setAttribute("r", "9");
+  hub.setAttribute("fill", "var(--bg)");
+  hub.setAttribute("stroke", "var(--accent)");
+  hub.setAttribute("stroke-width", "3");
+  needle.appendChild(hub);
+  needle.setAttribute("transform", "rotate(" + (G.start - 270) + " " + cx + " " + cy + ")");
+  svg.appendChild(needle);
+  gaugeEls.needle = needle;
+
+  updateGaugeNeedle(0);
+}
+
+var needleCurrent = 0;
+
+function updateGaugeNeedle(displayValue) {
+  if (!gaugeEls.needle) return;
+  var frac = valueToFrac(displayValue);
+  var target = G.start + frac * (G.end - G.start);
+
+  if (S.reduceMotion) {
+    needleCurrent = target;
+  } else {
+    needleCurrent += (target - needleCurrent) * 0.18;
+    if (Math.abs(target - needleCurrent) < 0.15) needleCurrent = target;
+  }
+
+  gaugeEls.needle.setAttribute("transform",
+    "rotate(" + (needleCurrent - 270).toFixed(2) + " " + G.cx + " " + G.cy + ")");
+
+  if (gaugeEls.progress) {
+    gaugeEls.progress.setAttribute("d", arcPath(G.cx, G.cy, G.r, G.start, needleCurrent));
+  }
+}
+
+var chartPoints = [];
+var chartStart = 0;
+var chartTotalMs = 1;
+
+function resizeChart() {
+  if (!dom.chart || !ctx) return;
+  var dpr = window.devicePixelRatio || 1;
+  var rect = dom.chart.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+  dom.chart.width = Math.round(rect.width * dpr);
+  dom.chart.height = Math.round(rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawChart();
+}
+
+function cssVar(name, fallback) {
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return (v && v.trim()) || fallback;
+  } catch (e) { return fallback; }
+}
+
+function drawChart() {
+  if (!ctx || !dom.chart) return;
+  var w = dom.chart.clientWidth, h = dom.chart.clientHeight;
+  if (!w || !h) return;
+
+  ctx.clearRect(0, 0, w, h);
+
+  var accentDl = cssVar("--accent", "#22d3ee");
+  var accentUl = cssVar("--accent-2", "#a855f7");
+  var gridCol = cssVar("--text-faint", "#6b7a9c");
+
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.strokeStyle = gridCol;
+  ctx.lineWidth = 1;
+  for (var i = 0; i <= 4; i++) {
+    var yy = 4 + (h - 8) * i / 4;
+    ctx.beginPath();
+    ctx.moveTo(0, yy);
+    ctx.lineTo(w, yy);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if (chartPoints.length < 2) {
+    if (dom.chartEmpty) dom.chartEmpty.style.display = "";
+    return;
+  }
+  if (dom.chartEmpty) dom.chartEmpty.style.display = "none";
+
+  var maxV = 0;
+  for (var j = 0; j < chartPoints.length; j++) {
+    if (chartPoints[j].v > maxV) maxV = chartPoints[j].v;
+  }
+  maxV = Math.max(maxV * 1.2, 1);
+
+  var t0 = chartStart;
+  var t1 = chartStart + chartTotalMs;
+  var span = Math.max(1, t1 - t0);
+
+  function px(t) { return clamp((t - t0) / span, 0, 1) * w; }
+  function py(v) { return h - 6 - (v / maxV) * (h - 14); }
+
+  ctx.save();
+  ctx.fillStyle = gridCol;
+  ctx.globalAlpha = 0.75;
+  ctx.font = "600 10px -apple-system,Segoe UI,Roboto,sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(UNIT_DEF[S.unit].label + " " + fmtSpeed(maxV).replace(/\.00$/, ""), 6, 13);
+  ctx.restore();
+
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  for (var k = 1; k < chartPoints.length; k++) {
+    var a = chartPoints[k - 1], b = chartPoints[k];
+    var isUp = b.phase === "upload";
+    ctx.strokeStyle = isUp ? accentUl : accentDl;
+    ctx.globalAlpha = 0.95;
+    ctx.beginPath();
+    ctx.moveTo(px(a.t), py(a.v));
+    ctx.lineTo(px(b.t), py(b.v));
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.10;
+    ctx.beginPath();
+    ctx.moveTo(px(a.t), h);
+    ctx.lineTo(px(a.t), py(a.v));
+    ctx.lineTo(px(b.t), py(b.v));
+    ctx.lineTo(px(b.t), h);
+    ctx.closePath();
+    ctx.fillStyle = isUp ? accentUl : accentDl;
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  var lastP = chartPoints[chartPoints.length - 1];
+  ctx.beginPath();
+  ctx.arc(px(lastP.t), py(lastP.v), 3.4, 0, Math.PI * 2);
+  ctx.fillStyle = lastP.phase === "upload" ? accentUl : accentDl;
+  ctx.fill();
+}
+
+function baseUrl() {
+  if (S.serverPreset === "custom" && S.customBase) {
+    return String(S.customBase).replace(/\/+$/, "");
+  }
+  return "https://speed.cloudflare.com";
+}
+
+function buildUrl(pathKey, bytes) {
+  var isCustom = (S.serverPreset === "custom" && S.customBase);
+  var base = baseUrl();
+  var path = isCustom ? (S[pathKey] || (pathKey === "customDownPath" ? "__down" : "__up")) : (pathKey === "customDownPath" ? "__down" : "__up");
+  path = String(path || "").replace(/^\/+/, "");
+  var sep = path.indexOf("?") >= 0 ? "&" : "?";
+  var url = base + "/" + path + sep + "bytes=" + bytes;
+  if (S.cacheBust) url += "&r=" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return url;
+}
+
+function metaUrl() {
+  var isCustom = (S.serverPreset === "custom" && S.customBase);
+  if (isCustom) {
+    var p = String(S.customMetaPath || "meta").replace(/^\/+/, "");
+    return baseUrl() + "/" + p;
+  }
+  return baseUrl() + "/meta";
+}
+
+function useFetchEngine() {
+  if (S.engine === "fetch") return SUPPORTS_STREAM;
+  if (S.engine === "xhr") return false;
+  return SUPPORTS_STREAM;
+}
+
+function fetchDownload(url, signal, onBytes) {
+  return fetch(url, {
+    method: "GET",
+    cache: "no-store",
+    credentials: "omit",
+    mode: "cors",
+    signal: signal
+  }).then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    if (!res.body || typeof res.body.getReader !== "function") {
+      return res.arrayBuffer().then(function (buf) {
+        onBytes(buf.byteLength);
+        return buf.byteLength;
+      });
+    }
+    var reader = res.body.getReader();
+    var total = 0;
+    function pump() {
+      return reader.read().then(function (r) {
+        if (r.done) return total;
+        total += r.value.byteLength;
+        onBytes(r.value.byteLength);
+        return pump();
+      });
+    }
+    return pump();
+  });
+}
+
+function xhrDownload(url, signal, onBytes, timeoutMs) {
+  return new Promise(function (resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    var last = 0, total = 0, settled = false;
+
+    function cleanup() {
+      if (signal && signal.removeEventListener) signal.removeEventListener("abort", onAbort);
+    }
+    function onAbort() { try { xhr.abort(); } catch (e) {} }
+
+    try {
+      xhr.open("GET", url, true);
+      xhr.responseType = "arraybuffer";
+      xhr.timeout = timeoutMs || 20000;
+    } catch (e) { reject(e); return; }
+
+    xhr.onprogress = function (e) {
+      if (e.lengthComputable) {
+        var d = e.loaded - last;
+        if (d > 0) { last = e.loaded; total += d; onBytes(d); }
+      }
+    };
+    xhr.onload = function () {
+      if (settled) return; settled = true; cleanup();
+      var rem = (xhr.response ? xhr.response.byteLength : 0) - last;
+      if (rem > 0) { total += rem; onBytes(rem); }
+      if (xhr.status >= 200 && xhr.status < 400) resolve(total);
+      else reject(new Error("HTTP " + xhr.status));
+    };
+    xhr.onerror = function () { if (settled) return; settled = true; cleanup(); reject(new Error("Network error")); };
+    xhr.ontimeout = function () { if (settled) return; settled = true; cleanup(); reject(new Error("Timeout")); };
+    xhr.onabort = function () {
+      if (settled) return; settled = true; cleanup();
+      var err = new Error("Aborted"); err.name = "AbortError"; reject(err);
+    };
+
+    if (signal && signal.addEventListener) signal.addEventListener("abort", onAbort);
+    try { xhr.send(); } catch (e) { cleanup(); reject(e); }
+  });
+}
+
+var blobCache = null;
+function makeUploadBlob(size) {
+  if (blobCache && blobCache.size === size) return blobCache.blob;
+  var seedLen = 65536;
+  var seed = new Uint8Array(seedLen);
+  try {
+    if (window.crypto && crypto.getRandomValues) {
+      crypto.getRandomValues(seed);
+    } else {
+      for (var i = 0; i < seedLen; i++) seed[i] = (Math.random() * 256) | 0;
+    }
+  } catch (e) {
+    for (var j = 0; j < seedLen; j++) seed[j] = (Math.random() * 256) | 0;
+  }
+  var parts = [];
+  var remaining = size;
+  while (remaining > 0) {
+    var n = Math.min(remaining, seedLen);
+    parts.push(seed.subarray(0, n));
+    remaining -= n;
+  }
+  var blob = new Blob(parts);
+  blobCache = { size: size, blob: blob };
+  return blob;
+}
+
+function xhrUpload(url, blob, signal, onBytes, timeoutMs) {
+  return new Promise(function (resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    var last = 0, total = 0, settled = false;
+
+    function cleanup() {
+      if (signal && signal.removeEventListener) signal.removeEventListener("abort", onAbort);
+    }
+    function onAbort() { try { xhr.abort(); } catch (e) {} }
+
+    try {
+      xhr.open("POST", url, true);
+      xhr.timeout = timeoutMs || 20000;
+    } catch (e) { reject(e); return; }
+
+    if (xhr.upload) {
+      xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable) {
+          var d = e.loaded - last;
+          if (d > 0) { last = e.loaded; total += d; onBytes(d); }
+        }
+      };
+    }
+
+    xhr.onload = function () {
+      if (settled) return; settled = true; cleanup();
+      if (xhr.status >= 200 && xhr.status < 400) resolve(total);
+      else reject(new Error("HTTP " + xhr.status));
+    };
+    xhr.onerror = function () { if (settled) return; settled = true; cleanup(); reject(new Error("Network error")); };
+    xhr.ontimeout = function () { if (settled) return; settled = true; cleanup(); reject(new Error("Timeout")); };
+    xhr.onabort = function () {
+      if (settled) return; settled = true; cleanup();
+      var err = new Error("Aborted"); err.name = "AbortError"; reject(err);
+    };
+
+    if (signal && signal.addEventListener) signal.addEventListener("abort", onAbort);
+    try { xhr.send(blob); } catch (e) { cleanup(); reject(e); }
+  });
+}
+
+function fetchJSON(url, signal, timeoutMs) {
+  return withTimeout(
+    fetch(url, { cache: "no-store", credentials: "omit", mode: "cors", signal: signal })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      }),
+    timeoutMs || 6000
+  );
+}
+
+var meter = {
+  total: 0,
+  marks: [],
+  t0: 0
+};
+
+function meterReset() {
+  meter.total = 0;
+  meter.t0 = now();
+  meter.marks = [{ t: meter.t0, b: 0 }];
+}
+
+function meterAdd(n) {
+  meter.total += n;
+}
+
+function meterTick() {
+  var t = now();
+  meter.marks.push({ t: t, b: meter.total });
+  var cutoff = t - 4000;
+  while (meter.marks.length > 2 && meter.marks[0].t < cutoff) meter.marks.shift();
+}
+
+function meterSpeed(windowMs) {
+  var m = meter.marks;
+  if (m.length < 2) return 0;
+  var t = now();
+  var i = m.length - 1;
+  var limit = t - (windowMs || 1500);
+  while (i > 0 && m[i - 1].t >= limit) i--;
+  var a = m[i], b = m[m.length - 1];
+  var dt = b.t - a.t;
+  if (dt <= 0) return 0;
+  return (b.b - a.b) / dt * 1000;
+}
+
+var running = false;
+var aborted = false;
+var phaseController = null;
+var activeStreams = 0;
+var lossCount = 0;
+var requestCount = 0;
+var currentResults = null;
+var testStartTime = 0;
+var phaseSamples = [];
+var lastMarkTime = 0;
+var rafId = null;
+var wakeLockSentinel = null;
+var expectedTotalMs = 1;
+
+function setPhaseLabel(txt) {
+  if (dom.gaugePhase) dom.gaugePhase.textContent = txt;
+}
+
+function setProgress(p) {
+  if (dom.progress) dom.progress.style.width = clamp(p * 100, 0, 100).toFixed(1) + "%";
+}
+
+function setStatus() {
+  if (dom.stEngine) dom.stEngine.textContent = useFetchEngine() ? "Fetch" : "XHR";
+  if (dom.stStreams) dom.stStreams.textContent = String(activeStreams);
+  if (dom.stData) dom.stData.textContent = fmtBytes(meter.total);
+  if (dom.stTime) dom.stTime.textContent = ((now() - testStartTime) / 1000).toFixed(1) + "s";
+}
+
+function highlightMetric(which) {
+  [dom.mDown, dom.mUp, dom.mPing, dom.mJitter, dom.mLoss].forEach(function (n) {
+    if (n) n.classList.remove("active");
+  });
+  if (which && which.classList) which.classList.add("active");
+}
+
+function resetMetricsUI() {
+  if (dom.vDown) dom.vDown.innerHTML = "—<span class=\"m-unit\">" + unitInfo().label + "</span>";
+  if (dom.vUp) dom.vUp.innerHTML = "—<span class=\"m-unit\">" + unitInfo().label + "</span>";
+  if (dom.vPing) dom.vPing.innerHTML = "—<span class=\"m-unit\">ms</span>";
+  if (dom.vJitter) dom.vJitter.innerHTML = "—<span class=\"m-unit\">ms</span>";
+  if (dom.vLoss) dom.vLoss.innerHTML = "—<span class=\"m-unit\">%</span>";
+  if (dom.sDown) dom.sDown.textContent = "Not tested";
+  if (dom.sUp) dom.sUp.textContent = "Not tested";
+  if (dom.sPing) dom.sPing.textContent = "Not tested";
+  if (dom.sJitter) dom.sJitter.textContent = "Not tested";
+  if (dom.sLoss) dom.sLoss.textContent = "Not tested";
+  highlightMetric(null);
+}
+
+function hideGrade() {
+  if (!dom.gradeBadge) return;
+  dom.gradeBadge.className = "grade-badge";
+  dom.gradeBadge.innerHTML = "";
+}
+
+function computeGrade(results) {
+  if (!results) return null;
+  var dl = results.download ? results.download.bps / 1e6 : 0;
+  var ul = results.upload ? results.upload.bps / 1e6 : 0;
+  var ping = (results.ping && results.ping.median) ? results.ping.median : 999;
+  var jitter = (results.ping && results.ping.jitter) ? results.ping.jitter : 999;
+  var score = 0;
+
+  if (dl >= 500) score += 40;
+  else if (dl >= 250) score += 36;
+  else if (dl >= 100) score += 31;
+  else if (dl >= 50) score += 25;
+  else if (dl >= 25) score += 18;
+  else if (dl >= 10) score += 12;
+  else if (dl >= 3) score += 6;
+  else if (dl > 0) score += 2;
+
+  if (ul >= 100) score += 25;
+  else if (ul >= 50) score += 22;
+  else if (ul >= 25) score += 18;
+  else if (ul >= 10) score += 13;
+  else if (ul >= 5) score += 8;
+  else if (ul >= 1) score += 4;
+  else if (ul > 0) score += 1;
+
+  if (ping <= 10) score += 20;
+  else if (ping <= 25) score += 18;
+  else if (ping <= 50) score += 15;
+  else if (ping <= 100) score += 11;
+  else if (ping <= 200) score += 6;
+  else if (ping <= 500) score += 2;
+
+  if (jitter <= 2) score += 15;
+  else if (jitter <= 5) score += 13;
+  else if (jitter <= 15) score += 9;
+  else if (jitter <= 30) score += 5;
+  else if (jitter <= 60) score += 2;
+
+  var grade, cls, label;
+  if (score >= 92) { grade = "A+"; cls = "grade-a"; label = "Excellent — perfect for gaming, 4K streaming and large downloads."; }
+  else if (score >= 82) { grade = "A"; cls = "grade-a"; label = "Great — smooth 4K streaming, video calls and online gaming."; }
+  else if (score >= 72) { grade = "B"; cls = "grade-b"; label = "Good — reliable for HD streaming and video calls."; }
+  else if (score >= 60) { grade = "C"; cls = "grade-c"; label = "Fair — fine for browsing, SD streaming and messaging."; }
+  else if (score >= 45) { grade = "D"; cls = "grade-d"; label = "Basic — may struggle with HD video or large uploads."; }
+  else { grade = "F"; cls = "grade-f"; label = "Slow — limited usability for modern web services."; }
+
+  return { score: Math.round(score), grade: grade, cls: cls, label: label };
+}
+
+function showGrade(results) {
+  if (!dom.gradeBadge || !S.showGrade) return;
+  var g = computeGrade(results);
+  if (!g) return;
+  dom.gradeBadge.className = "grade-badge show " + g.cls;
+  dom.gradeBadge.innerHTML =
+    '<div class="g-score">' + g.grade + '</div>' +
+    '<div class="g-info">' +
+      '<div class="g-title">Connection Grade · ' + g.score + '/100</div>' +
+      '<div class="g-label">' + escapeHtml(g.label) + '</div>' +
+    '</div>';
+}
+
+function getLocalIPs() {
+  return new Promise(function (resolve) {
+    var out = { v4: [], v6: [] };
+    try {
+      var PC = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+      if (!PC) { resolve(out); return; }
+      var pc = new PC({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+      try { pc.createDataChannel("donut-probe"); } catch (e) {}
+      var done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        try { pc.close(); } catch (e) {}
+        resolve(out);
+      }
+      pc.onicecandidate = function (e) {
+        if (!e) return;
+        if (!e.candidate) { finish(); return; }
+        var c = e.candidate.candidate || "";
+        var m = c.match(/([0-9]{1,3}(?:\.[0-9]{1,3}){3})|([a-f0-9]{1,4}(?::[a-f0-9]{0,4}){2,7})/i);
+        if (!m) return;
+        var ip = m[0];
+        if (ip.indexOf(".") >= 0) {
+          if (ip !== "0.0.0.0" && out.v4.indexOf(ip) < 0) out.v4.push(ip);
+        } else {
+          if (ip.indexOf("fe80") !== 0 && out.v6.indexOf(ip) < 0) out.v6.push(ip);
+        }
+      };
+      pc.createOffer().then(function (o) {
+        return pc.setLocalDescription(o);
+      }).catch(function () { finish(); });
+      setTimeout(finish, 3000);
+    } catch (e) { resolve(out); }
+  });
+}
+
+function getPlatformInfo() {
+  var ua = navigator.userAgent || "";
+  var out = {};
+  var browser = "Unknown", bver = "";
+  if (/Edg\//.test(ua)) { browser = "Edge"; bver = (ua.match(/Edg\/([\d.]+)/) || [])[1] || ""; }
+  else if (/OPR\//.test(ua) || /Opera/.test(ua)) { browser = "Opera"; bver = (ua.match(/(?:OPR|Opera)\/([\d.]+)/) || [])[1] || ""; }
+  else if (/SamsungBrowser\//.test(ua)) { browser = "Samsung Internet"; bver = (ua.match(/SamsungBrowser\/([\d.]+)/) || [])[1] || ""; }
+  else if (/Chrome\//.test(ua)) { browser = "Chrome"; bver = (ua.match(/Chrome\/([\d.]+)/) || [])[1] || ""; }
+  else if (/Firefox\//.test(ua)) { browser = "Firefox"; bver = (ua.match(/Firefox\/([\d.]+)/) || [])[1] || ""; }
+  else if (/Safari\//.test(ua) && /Version\//.test(ua)) { browser = "Safari"; bver = (ua.match(/Version\/([\d.]+)/) || [])[1] || ""; }
+  out.browser = browser + (bver ? " " + bver.split(".")[0] : "");
+
+  var os = "Unknown";
+  if (/Windows NT 10/.test(ua)) os = "Windows 10/11";
+  else if (/Windows NT/.test(ua)) os = "Windows";
+  else if (/Mac OS X/.test(ua)) os = "macOS";
+  else if (/Android/.test(ua)) os = "Android " + ((ua.match(/Android ([\d.]+)/) || [])[1] || "");
+  else if (/iPhone|iPad|iPod/.test(ua)) os = "iOS";
+  else if (/CrOS/.test(ua)) os = "ChromeOS";
+  else if (/Linux/.test(ua)) os = "Linux";
+  out.os = os;
+
+  if (/iPad/.test(ua) || (/Android/.test(ua) && !/Mobile/.test(ua))) out.device = "Tablet";
+  else if (/Mobile|iPhone|iPod/.test(ua)) out.device = "Mobile";
+  else out.device = "Desktop";
+
+  try {
+    if (screen && screen.width && screen.height) {
+      out.screen = screen.width + " × " + screen.height + (screen.colorDepth ? " @ " + screen.colorDepth + "-bit" : "");
+    }
+  } catch (e) {}
+  if (window.innerWidth && window.innerHeight) {
+    out.viewport = window.innerWidth + " × " + window.innerHeight;
+  }
+  try {
+    if (navigator.language) out.language = navigator.language + (navigator.languages && navigator.languages.length > 1 ? " (+" + (navigator.languages.length - 1) + ")" : "");
+  } catch (e) {}
+  return out;
+}
+
+function renderInfo(info) {
+  if (!dom.infoGrid) return;
+  var rows = [];
+  function add(k, v, cls) {
+    if (v == null || v === "" || v === "—") return;
+    var safe = escapeHtml(v);
+    rows.push('<div class="info-row' + (cls ? " " + cls : "") + '" data-copy="' + safe + '" title="Click to copy">' +
+              '<span class="k">' + escapeHtml(k) + '</span>' +
+              '<span class="v" title="' + safe + '">' + safe + "</span></div>");
+  }
+  add("IPv4 address", info.ipv4, "v4");
+  add("IPv6 address", info.ipv6, "v6");
+  add("Local IPv4 (LAN)", info.localV4);
+  add("Local IPv6 (LAN)", info.localV6);
+  add("Primary IP", info.ip);
+  add("ISP", info.isp);
+  add("ASN", info.asn ? "AS" + info.asn : "");
+  add("City", info.city);
+  add("Region", info.region);
+  add("Country", info.country);
+  add("Edge node", info.colo);
+  add("Protocol", info.protocol);
+  add("Timezone", info.tz);
+  add("Server", info.server || "Cloudflare edge");
+  add("Test engine", useFetchEngine() ? "Fetch streams" : "XHR");
+  add("Streams", String(S.parallel));
+
+  add("Browser", info.browser);
+  add("Operating system", info.os);
+  add("Device type", info.device);
+  add("Screen", info.screen);
+  add("Viewport", info.viewport);
+  add("Language", info.language);
+
+  try {
+    var nc = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (nc) {
+      if (nc.effectiveType) add("Effective type", String(nc.effectiveType).toUpperCase());
+      if (nc.downlink) add("Browser estimate ↓", nc.downlink + " Mbps");
+      if (nc.rtt) add("Browser RTT", nc.rtt + " ms");
+      if (nc.saveData) add("Data saver", nc.saveData ? "On" : "Off");
+    }
+  } catch (e) {}
+
+  if (navigator.hardwareConcurrency) add("CPU threads", navigator.hardwareConcurrency);
+  if (navigator.deviceMemory) add("Device memory", navigator.deviceMemory + " GB");
+
+  dom.infoGrid.innerHTML = rows.length ? rows.join("") :
+    '<div class="empty-state">No connection details available</div>';
+}
+
+function updateChips(info) {
+  function setChip(chip, label, value, cls) {
+    if (!chip) return;
+    chip.classList.remove("loading");
+    var safe = escapeHtml(value);
+    chip.innerHTML = '<i class="dot"></i>' + label + ': <b class="' + (cls || "") + '">' + safe + "</b>";
+    chip.setAttribute("data-copy", value == null ? "" : String(value));
+  }
+  setChip(dom.chipIp, "IPv4", info.ipv4 || info.ip || "unavailable", "v4");
+  setChip(dom.chipIp6, "IPv6", info.ipv6 || "unavailable", "v6");
+  setChip(dom.chipIsp, "ISP", info.isp || "unknown");
+
+  if (dom.chipLoc) {
+    var loc = [info.city, info.country].filter(Boolean).join(", ") || "unknown";
+    dom.chipLoc.classList.remove("loading");
+    dom.chipLoc.innerHTML = 'Location: <b>' + escapeHtml(loc) + "</b>";
+    dom.chipLoc.setAttribute("data-copy", loc);
+  }
+}
+
+function fetchConnectionInfo() {
+  var out = {};
+
+  var ipv4P = withTimeout(fetchJSON("https://api.ipify.org?format=json", null, 5000), 5500)
+    .then(function (r) { return (r && r.ip) || ""; })
+    .catch(function () { return ""; });
+
+  var ipv6P = withTimeout(fetchJSON("https://api6.ipify.org?format=json", null, 5000), 5500)
+    .then(function (r) { return (r && r.ip) || ""; })
+    .catch(function () { return ""; });
+
+  return fetchJSON(metaUrl(), null, 6000).then(function (m) {
+    out.ip = m.clientIp || m.ip || m.query || "";
+    out.isp = m.asOrganization || m.isp || m.org || "";
+    out.asn = m.asn || "";
+    out.city = m.city || "";
+    out.region = m.region || m.regionName || "";
+    out.country = m.country || "";
+    out.colo = m.colo || "";
+    out.protocol = m.httpProtocol || "";
+    out.tz = m.timezone || "";
+    out.server = "Cloudflare edge";
+    return out;
+  }).catch(function () { return out; }).then(function (info) {
+    var chain = Promise.resolve(info);
+
+    if (!info.ip) {
+      chain = chain.then(function (o) {
+        return withTimeout(fetchJSON("https://api.ipify.org?format=json", null, 5000), 5500)
+          .then(function (r) { o.ip = r.ip; return o; })
+          .catch(function () { return o; });
+      });
+    }
+
+    if (!info.isp && info.ip) {
+      chain = chain.then(function (o) {
+        return withTimeout(fetchJSON("https://ipwho.is/", null, 6000), 6500)
+          .then(function (r) {
+            if (r && r.success !== false) {
+              o.isp = (r.connection && r.connection.isp) || r.isp || o.isp;
+              o.asn = o.asn || (r.connection && r.connection.asn);
+              o.city = o.city || r.city;
+              o.region = o.region || r.region;
+              o.country = o.country || r.country;
+              o.tz = o.tz || (r.timezone && r.timezone.id);
+              o.server = o.server || "Cloudflare edge";
+            }
+            return o;
+          })
+          .catch(function () { return o; });
+      });
+    }
+
+    return chain.then(function (o) {
+      return Promise.all([ipv4P, ipv6P]).then(function (ips) {
+        o.ipv4 = ips[0] || "";
+        o.ipv6 = ips[1] || "";
+        if (!o.ip) o.ip = o.ipv4 || o.ipv6 || "";
+        return o;
+      });
+    });
+  }).then(function (o) {
+    if (!S.webrtcLocalIp) return o;
+    return getLocalIPs().then(function (local) {
+      if (local.v4.length) o.localV4 = local.v4.join(", ");
+      if (local.v6.length) o.localV6 = local.v6.join(", ");
+      return o;
+    });
+  }).then(function (o) {
+    if (S.platformInfo) {
+      var p = getPlatformInfo();
+      if (p.browser) o.browser = p.browser;
+      if (p.os) o.os = p.os;
+      if (p.device) o.device = p.device;
+      if (p.screen) o.screen = p.screen;
+      if (p.viewport) o.viewport = p.viewport;
+      if (p.language) o.language = p.language;
+    }
+    return o;
+  });
+}
+
+function pingOnce(signal) {
+  var url = buildUrl("customDownPath", 0);
+  var t0 = now();
+  return withTimeout(
+    fetch(url, { cache: "no-store", credentials: "omit", mode: "cors", signal: signal })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.arrayBuffer();
+      }),
+    (Number(S.timeout) || 20) * 1000
+  ).then(function () {
+    return now() - t0;
+  });
+}
+
+function runPingPhase(signal, onProgress) {
+  var samples = [];
+  var fails = 0;
+  var total = Number(S.pingCount) || 12;
+  var chain = Promise.resolve();
+
+  if (S.warmup) {
+    chain = chain.then(function () {
+      return pingOnce(signal).catch(function () {});
+    });
+  }
+
+  for (var i = 0; i < total; i++) {
+    (function (idx) {
+      chain = chain.then(function () {
+        if (aborted) return;
+        setPhaseLabel("Ping " + (idx + 1) + "/" + total);
+        onProgress(idx / total);
+        return pingOnce(signal).then(function (rtt) {
+          samples.push(rtt);
+          requestCount++;
+          var avg = samples.reduce(function (a, b) { return a + b; }, 0) / samples.length;
+          if (dom.vPing) dom.vPing.innerHTML = avg.toFixed(1) + '<span class="m-unit">ms</span>';
+          updateGaugeNeedle(0);
+          if (dom.gaugeValue) dom.gaugeValue.textContent = avg.toFixed(1);
+          if (dom.gaugeUnit) dom.gaugeUnit.textContent = "ms";
+        }).catch(function (e) {
+          if (e && e.name === "AbortError") return;
+          if (aborted) return;
+          fails++;
+          requestCount++;
+        }).then(function () {
+          return sleep(35);
+        });
+      });
+    })(i);
+  }
+
+  return chain.then(function () {
+    onProgress(1);
+    var res = { samples: samples, fails: fails, total: total };
+    if (samples.length) {
+      var sorted = samples.slice().sort(function (a, b) { return a - b; });
+      res.min = sorted[0];
+      res.max = sorted[sorted.length - 1];
+      res.median = sorted[Math.floor(sorted.length / 2)];
+      res.avg = samples.reduce(function (a, b) { return a + b; }, 0) / samples.length;
+
+      var diffs = [];
+      for (var i = 1; i < samples.length; i++) diffs.push(Math.abs(samples[i] - samples[i - 1]));
+      res.jitter = diffs.length ? diffs.reduce(function (a, b) { return a + b; }, 0) / diffs.length : 0;
+    } else {
+      res.min = res.max = res.median = res.avg = res.jitter = 0;
+    }
+    res.loss = total > 0 ? (fails / total) * 100 : 0;
+    return res;
+  });
+}
+
+function initialChunkBytes() {
+  var minB = (Number(S.minChunkKB) || 256) * 1024;
+  return Math.max(minB, 512 * 1024);
+}
+
+function maxChunkBytes() {
+  return (Number(S.maxChunkMB) || 64) * 1024 * 1024;
+}
+
+function minChunkBytes() {
+  return (Number(S.minChunkKB) || 256) * 1024;
+}
+
+function downloadWorker(deadline, signal, onBytes) {
+  var chunk = initialChunkBytes();
+  var useFetch = useFetchEngine();
+  var timeoutMs = (Number(S.timeout) || 20) * 1000;
+  var consecutiveErrors = 0;
+
+  function step() {
+    if (aborted) return Promise.resolve();
+    var t = now();
+    if (t >= deadline) return Promise.resolve();
+    var remaining = deadline - t;
+    if (remaining < 600) return Promise.resolve();
+
+    var url = buildUrl("customDownPath", chunk);
+    var t0 = now();
+    var got = 0;
+
+    function collect(n) {
+      got += n;
+      if (now() <= deadline) onBytes(n);
+    }
+
+    activeStreams++;
+    setStatus();
+
+    var p = useFetch
+      ? fetchDownload(url, signal, collect)
+      : xhrDownload(url, signal, collect, timeoutMs);
+
+    return p.then(function () {
+      activeStreams--;
+      setStatus();
+      consecutiveErrors = 0;
+      if (S.adaptive) {
+        var dt = Math.max(1, now() - t0);
+        var bps = got / (dt / 1000);
+        var target = clamp(bps * 1.6, minChunkBytes(), maxChunkBytes());
+        chunk = Math.round(target);
+      }
+      return step();
+    }).catch(function (err) {
+      activeStreams--;
+      setStatus();
+      if (aborted || (err && err.name === "AbortError")) return;
+      lossCount++;
+      consecutiveErrors++;
+      chunk = Math.max(minChunkBytes(), Math.floor(chunk / 2));
+      if (consecutiveErrors > 8) return;
+      return sleep(Math.min(800, 120 * consecutiveErrors)).then(step);
+    });
+  }
+
+  return step();
+}
+
+function runTransferPhase(kind, durationSec, signal, onProgress) {
+  var durationMs = Math.max(2000, (Number(durationSec) || 10) * 1000);
+  var deadline = now() + durationMs;
+  var n = Math.max(1, Math.min(16, Number(S.parallel) || 6));
+
+  var workers = [];
+  for (var i = 0; i < n; i++) {
+    workers.push(
+      kind === "download"
+        ? downloadWorker(deadline, signal, meterAdd)
+        : uploadWorker(deadline, signal, meterAdd)
+    );
+  }
+
+  return Promise.all(workers).then(function () {
+    onProgress(1);
+  });
+}
+
+function uploadWorker(deadline, signal, onBytes) {
+  var chunk = Math.max(minChunkBytes(), 256 * 1024);
+  var timeoutMs = (Number(S.timeout) || 20) * 1000;
+  var consecutiveErrors = 0;
+
+  function step() {
+    if (aborted) return Promise.resolve();
+    var t = now();
+    if (t >= deadline) return Promise.resolve();
+    if (deadline - t < 600) return Promise.resolve();
+
+    var url = buildUrl("customUpPath", chunk);
+    var blob = makeUploadBlob(chunk);
+    var t0 = now();
+    var got = 0;
+
+    function collect(nb) {
+      got += nb;
+      if (now() <= deadline) onBytes(nb);
+    }
+
+    activeStreams++;
+    setStatus();
+
+    return xhrUpload(url, blob, signal, collect, timeoutMs).then(function () {
+      activeStreams--;
+      setStatus();
+      consecutiveErrors = 0;
+      if (S.adaptive) {
+        var dt = Math.max(1, now() - t0);
+        var bps = got / (dt / 1000);
+        var target = clamp(bps * 1.6, minChunkBytes(), Math.min(maxChunkBytes(), 32 * 1024 * 1024));
+        chunk = Math.round(target);
+      }
+      return step();
+    }).catch(function (err) {
+      activeStreams--;
+      setStatus();
+      if (aborted || (err && err.name === "AbortError")) return;
+      lossCount++;
+      consecutiveErrors++;
+      chunk = Math.max(64 * 1024, Math.floor(chunk / 2));
+      if (consecutiveErrors > 8) return;
+      return sleep(Math.min(800, 120 * consecutiveErrors)).then(step);
+    });
+  }
+
+  return step();
+}
+
+function computeFinalSpeed(samples) {
+  if (!samples || samples.length < 3) {
+    if (samples && samples.length) {
+      return samples[samples.length - 1].v;
+    }
+    return 0;
+  }
+  var t0 = samples[0].t;
+  var t1 = samples[samples.length - 1].t;
+  var skipUntil = t0 + (t1 - t0) * 0.22;
+
+  var arr = [];
+  for (var i = 0; i < samples.length; i++) {
+    if (samples[i].t >= skipUntil) arr.push(samples[i].v);
+  }
+  if (arr.length < 4) arr = samples.map(function (s) { return s.v; });
+
+  arr.sort(function (a, b) { return a - b; });
+  var lo = Math.floor(arr.length * 0.15);
+  var hi = Math.ceil(arr.length * 0.9);
+  var slice = arr.slice(lo, hi);
+  if (!slice.length) slice = arr;
+
+  var sum = 0;
+  for (var j = 0; j < slice.length; j++) sum += slice[j];
+  return sum / slice.length;
+}
+
+function startLoop() {
+  lastMarkTime = 0;
+  function frame() {
+    if (!running) return;
+    var t = now();
+    if (t - lastMarkTime > 100) {
+      meterTick();
+      lastMarkTime = t;
+    }
+    var spd = meterSpeed(1500);
+    var disp = toDisplay(spd);
+
+    if (dom.gaugeValue && currentPhaseIsSpeed) {
+      dom.gaugeValue.textContent = fmtSpeed(spd);
+      if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+      updateGaugeNeedle(disp);
+    }
+
+    setStatus();
+
+    rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+}
+
+function stopLoop() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+}
+
+var currentPhaseIsSpeed = false;
+
+function sampleTick(phase) {
+  var v = meterSpeed(1200);
+  chartPoints.push({ t: now(), v: v, phase: phase });
+  if (chartPoints.length > 1200) chartPoints.shift();
+  phaseSamples.push({ t: now(), v: v });
+  drawChart();
+}
+
+function requestWakeLock() {
+  if (!S.wakeLock) return Promise.resolve();
+  try {
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      return navigator.wakeLock.request("screen").then(function (s) {
+        wakeLockSentinel = s;
+      }).catch(function () {});
+    }
+  } catch (e) {}
+  return Promise.resolve();
+}
+
+function releaseWakeLock() {
+  try {
+    if (wakeLockSentinel) {
+      wakeLockSentinel.release();
+      wakeLockSentinel = null;
+    }
+  } catch (e) {}
+}
+
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "visible" && running && S.wakeLock) {
+    requestWakeLock();
+  }
+});
+
+var sampleTimer = null;
+
+function startTest() {
+  if (running) return;
+  running = true;
+  aborted = false;
+  lossCount = 0;
+  requestCount = 0;
+  currentResults = null;
+  chartPoints = [];
+  phaseSamples = [];
+  meterReset();
+  resetMetricsUI();
+  hideGrade();
+  blobCache = null;
+
+  dom.btnStart.disabled = true;
+  dom.btnStartLbl.textContent = "Testing…";
+  dom.btnStop.hidden = false;
+  setPhaseLabel("Starting…");
+  setProgress(0);
+  if (dom.gaugeValue) dom.gaugeValue.textContent = "0.00";
+  if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+  if (dom.chartEmpty) dom.chartEmpty.style.display = "none";
+
+  testStartTime = now();
+  chartStart = testStartTime;
+
+  var order = S.testOrder;
+  var phases = [];
+  phases.push("ping");
+  if (order === "full") { phases.push("download"); phases.push("upload"); }
+  else if (order === "full-up") { phases.push("upload"); phases.push("download"); }
+  else if (order === "download") { phases.push("download"); }
+  else if (order === "upload") { phases.push("upload"); }
+
+  var pingEst = (Number(S.pingCount) || 12) * 120 + 400;
+  var dlEst = phases.indexOf("download") >= 0 ? (Number(S.downloadDuration) || 10) * 1000 : 0;
+  var ulEst = phases.indexOf("upload") >= 0 ? (Number(S.uploadDuration) || 10) * 1000 : 0;
+  expectedTotalMs = pingEst + dlEst + ulEst + 1200;
+  chartTotalMs = expectedTotalMs;
+
+  var weights = { ping: 0.12, download: 0.44, upload: 0.44 };
+  var totalWeight = phases.reduce(function (a, p) { return a + weights[p]; }, 0);
+
+  var results = {
+    timestamp: Date.now(),
+    ping: null,
+    download: null,
+    upload: null,
+    connection: null,
+    server: S.serverPreset === "custom" ? (S.customBase || "custom") : "Cloudflare edge",
+    unit: S.unit,
+    userAgent: navigator.userAgent,
+    parallel: S.parallel
+  };
+
+  var metaPromise = S.ipLookup ? fetchConnectionInfo() : Promise.resolve(null);
+
+  requestWakeLock();
+  startLoop();
+
+  var completedWeight = 0;
+
+  function phaseProgress(p) {
+    setProgress((completedWeight + p * weights[currentPhaseName]) / totalWeight);
+  }
+
+  var currentPhaseName = "ping";
+
+  metaPromise.then(function (info) {
+    if (info) {
+      results.connection = info;
+      renderInfo(info);
+      updateChips(info);
+      if (!running) return;
+      renderInfo(info);
+    }
+  });
+
+  function runNext(index) {
+    if (aborted || index >= phases.length) return Promise.resolve();
+
+    var phase = phases[index];
+    currentPhaseName = phase;
+    phaseController = new AbortCtor();
+    var signal = phaseController.signal;
+
+    if (phase !== "ping") {
+      phaseSamples = [];
+      meterReset();
+      meter.marks = [{ t: now(), b: 0 }];
+    }
+
+    if (phase === "ping") {
+      currentPhaseIsSpeed = false;
+      highlightMetric(dom.mPing);
+      setPhaseLabel("Measuring latency…");
+      if (dom.gaugeUnit) dom.gaugeUnit.textContent = "ms";
+
+      return runPingPhase(signal, phaseProgress).then(function (res) {
+        results.ping = res;
+        if (res.samples.length) {
+          if (dom.vPing) dom.vPing.innerHTML = res.median.toFixed(1) + '<span class="m-unit">ms</span>';
+          if (dom.sPing) dom.sPing.textContent = "min " + res.min.toFixed(1) + " · max " + res.max.toFixed(1) + " · avg " + res.avg.toFixed(1);
+          if (dom.vJitter) dom.vJitter.innerHTML = res.jitter.toFixed(1) + '<span class="m-unit">ms</span>';
+          if (dom.sJitter) {
+            var jt = res.jitter < 5 ? "Excellent" : res.jitter < 15 ? "Good" : res.jitter < 30 ? "Fair" : "Poor";
+            dom.sJitter.textContent = jt;
+          }
+          if (dom.vLoss) dom.vLoss.innerHTML = res.loss.toFixed(res.loss === 0 ? 0 : 1) + '<span class="m-unit">%</span>';
+          if (dom.sLoss) {
+            var lt = res.loss === 0 ? "No loss detected" : res.loss < 1 ? "Very low" : res.loss < 3 ? "Moderate" : "High";
+            dom.sLoss.textContent = lt;
+          }
+        } else {
+          if (dom.sPing) dom.sPing.textContent = "Failed";
+          if (dom.vPing) dom.vPing.innerHTML = "N/A";
+        }
+        if (dom.gaugeValue) dom.gaugeValue.textContent = res.median ? res.median.toFixed(1) : "—";
+        completedWeight += weights.ping;
+        setProgress(completedWeight / totalWeight);
+        return runNext(index + 1);
+      });
+    }
+
+    currentPhaseIsSpeed = true;
+    var isDown = (phase === "download");
+    highlightMetric(isDown ? dom.mDown : dom.mUp);
+    setPhaseLabel(isDown ? "Testing download…" : "Testing upload…");
+    if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+    updateGaugeNeedle(0);
+
+    var dur = isDown ? S.downloadDuration : S.uploadDuration;
+    var deadline = now() + dur * 1000;
+
+    if (sampleTimer) clearInterval(sampleTimer);
+    sampleTimer = setInterval(function () {
+      if (!running) return;
+      sampleTick(phase);
+    }, 180);
+
+    return runTransferPhase(phase, dur, signal, phaseProgress).then(function () {
+      if (sampleTimer) { clearInterval(sampleTimer); sampleTimer = null; }
+      sampleTick(phase);
+
+      var finalBps = computeFinalSpeed(phaseSamples);
+      var elapsed = (now() - (deadline - dur * 1000)) / 1000;
+      var entry = {
+        bps: finalBps,
+        bytes: meter.total,
+        seconds: elapsed,
+        requests: requestCount
+      };
+
+      if (isDown) {
+        results.download = entry;
+        if (dom.vDown) dom.vDown.innerHTML = fmtSpeed(finalBps) + '<span class="m-unit">' + unitInfo().label + "</span>";
+        if (dom.sDown) dom.sDown.textContent = fmtBytes(meter.total) + " transferred";
+        if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(finalBps);
+        updateGaugeNeedle(toDisplay(finalBps));
+      } else {
+        results.upload = entry;
+        if (dom.vUp) dom.vUp.innerHTML = fmtSpeed(finalBps) + '<span class="m-unit">' + unitInfo().label + "</span>";
+        if (dom.sUp) dom.sUp.textContent = fmtBytes(meter.total) + " transferred";
+        if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(finalBps);
+        updateGaugeNeedle(toDisplay(finalBps));
+      }
+
+      completedWeight += weights[phase];
+      setProgress(completedWeight / totalWeight);
+
+      return sleep(120).then(function () { return runNext(index + 1); });
+    });
+  }
+
+  runNext(0).then(function () {
+    finishTest(results);
+  }).catch(function (err) {
+    if (aborted) return;
+    console.error(err);
+    toast("Test error: " + (err && err.message ? err.message : "unknown"), "err");
+    finishTest(results);
+  });
+}
+
+function finishTest(results) {
+  if (sampleTimer) { clearInterval(sampleTimer); sampleTimer = null; }
+  stopLoop();
+  releaseWakeLock();
+
+  running = false;
+  dom.btnStart.disabled = false;
+  dom.btnStartLbl.textContent = "Test Again";
+  dom.btnStop.hidden = true;
+  currentPhaseIsSpeed = false;
+  highlightMetric(null);
+
+  if (aborted) {
+    setPhaseLabel("Cancelled");
+  } else {
+    setPhaseLabel("Complete");
+  }
+  setProgress(1);
+  setStatus();
+
+  if (results && (results.download || results.upload || results.ping) && S.saveHistory) {
+    results.connection = results.connection || {};
+    Store.history.unshift(results);
+    var limit = Number(S.historyLimit) || 25;
+    if (Store.history.length > limit) Store.history.length = limit;
+    saveStore();
+    renderHistory();
+  }
+
+  currentResults = results;
+
+  if (!aborted) {
+    var showBps = 0;
+    if (results.download) showBps = results.download.bps;
+    else if (results.upload) showBps = results.upload.bps;
+    if (showBps) {
+      if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(showBps);
+      if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+    }
+    setPhaseLabel("Complete");
+    showGrade(results);
+    toast("Test complete", "ok");
+  } else {
+    toast("Test cancelled");
+  }
+
+  if (S.autoCopy && currentResults && !aborted) {
+    copySummary(true);
+  }
+}
+
+function abortTest() {
+  if (!running) return;
+  aborted = true;
+  if (phaseController) {
+    try { phaseController.abort(); } catch (e) {}
+  }
+  if (sampleTimer) { clearInterval(sampleTimer); sampleTimer = null; }
+  setPhaseLabel("Cancelling…");
+}
+
+function summaryText(r) {
+  if (!r) return "";
+  var u = UNIT_DEF[r.unit] ? r.unit : S.unit;
+  var f = UNIT_DEF[u].fromBytes;
+  var lines = [];
+  lines.push("Donut Interest Speed Test — " + new Date(r.timestamp).toLocaleString());
+  lines.push("-------------------------------------------------");
+  if (r.download) lines.push("Download : " + (r.download.bps * f).toFixed(2) + " " + u);
+  if (r.upload)   lines.push("Upload   : " + (r.upload.bps * f).toFixed(2) + " " + u);
+  if (r.ping) {
+    lines.push("Ping     : " + r.ping.median.toFixed(1) + " ms (min " + r.ping.min.toFixed(1) + ", max " + r.ping.max.toFixed(1) + ")");
+    lines.push("Jitter   : " + r.ping.jitter.toFixed(1) + " ms");
+    lines.push("Loss     : " + r.ping.loss.toFixed(1) + " %");
+  }
+  var grade = computeGrade(r);
+  if (grade) lines.push("Grade    : " + grade.grade + " (" + grade.score + "/100)");
+  var c = r.connection || {};
+  if (c.ipv4) lines.push("IPv4     : " + c.ipv4);
+  if (c.ipv6) lines.push("IPv6     : " + c.ipv6);
+  if (c.localV4) lines.push("Local v4 : " + c.localV4);
+  if (c.localV6) lines.push("Local v6 : " + c.localV6);
+  if (c.ip && !c.ipv4 && !c.ipv6) lines.push("IP       : " + c.ip);
+  if (c.isp) lines.push("ISP      : " + c.isp);
+  if (c.city || c.country) lines.push("Location : " + [c.city, c.region, c.country].filter(Boolean).join(", "));
+  if (c.browser) lines.push("Browser  : " + c.browser + (c.os ? " on " + c.os : ""));
+  if (c.device) lines.push("Device   : " + c.device);
+  lines.push("Server   : " + (r.server || "Cloudflare edge"));
+  return lines.join("\n");
+}
+
+function copySummary(silent) {
+  var txt = summaryText(currentResults || (Store.history[0] || null));
+  if (!txt) { if (!silent) toast("No results to copy"); return; }
+  copyToClipboard(txt).then(function (ok) {
+    if (!silent && ok) toast("Result copied to clipboard", "ok");
+    else if (!silent) toast("Copy failed", "err");
+  });
+}
+
+function download(filename, content, mime) {
+  try {
+    var blob = new Blob([content], { type: mime || "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 200);
+    return true;
+  } catch (e) {
+    toast("Download failed", "err");
+    return false;
+  }
+}
+
+function historyToCsv() {
+  var u = S.unit;
+  var f = UNIT_DEF[u].fromBytes;
+  var rows = [["Date", "Download (" + u + ")", "Upload (" + u + ")", "Ping (ms)", "Jitter (ms)", "Loss (%)", "Grade", "IPv4", "IPv6", "Local IPv4", "Local IPv6", "ISP", "City", "Country", "Browser", "OS", "Device", "Server"]];
+  Store.history.forEach(function (r) {
+    var c = r.connection || {};
+    var g = computeGrade(r);
+    rows.push([
+      new Date(r.timestamp).toISOString(),
+      r.download ? (r.download.bps * f).toFixed(3) : "",
+      r.upload ? (r.upload.bps * f).toFixed(3) : "",
+      r.ping ? r.ping.median.toFixed(1) : "",
+      r.ping ? r.ping.jitter.toFixed(1) : "",
+      r.ping ? r.ping.loss.toFixed(1) : "",
+      g ? g.grade : "",
+      c.ipv4 || "", c.ipv6 || "", c.localV4 || "", c.localV6 || "",
+      c.isp || "", c.city || "", c.country || "",
+      c.browser || "", c.os || "", c.device || "",
+      r.server || ""
+    ]);
+  });
+  return rows.map(function (row) {
+    return row.map(function (cell) {
+      var s = String(cell == null ? "" : cell);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(",");
+  }).join("\n");
+}
+
+function renderSettings() {
+  var root = dom.settingsBody;
+  if (!root) return;
+  root.innerHTML = "";
+
+  SCHEMA.forEach(function (sec) {
+    var wrap = el("div", "settings-section");
+    wrap.appendChild(el("h3", null, sec.title));
+
+    sec.items.forEach(function (item) {
+      var row = el("div", "setting");
+      var val = S[item.key];
+
+      if (item.type === "toggle") {
+        var txt = el("div", "setting-text");
+        txt.appendChild(el("label", null, escapeHtml(item.label)));
+        if (item.hint) txt.appendChild(el("div", "hint", escapeHtml(item.hint)));
+        row.appendChild(txt);
+
+        var sw = el("label", "switch");
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!val;
+        cb.setAttribute("data-key", item.key);
+        cb.setAttribute("data-type", "toggle");
+        sw.appendChild(cb);
+        sw.appendChild(el("span", "slider"));
+        row.appendChild(sw);
+
+      } else if (item.type === "select") {
+        var txt2 = el("div", "setting-text");
+        txt2.appendChild(el("label", null, escapeHtml(item.label)));
+        if (item.hint) txt2.appendChild(el("div", "hint", escapeHtml(item.hint)));
+        row.appendChild(txt2);
+
+        var sel = document.createElement("select");
+        sel.setAttribute("data-key", item.key);
+        sel.setAttribute("data-type", "select");
+        item.options.forEach(function (opt) {
+          var o = document.createElement("option");
+          o.value = String(opt[0]);
+          o.textContent = opt[1];
+          if (String(val) === String(opt[0])) o.selected = true;
+          sel.appendChild(o);
+        });
+        row.appendChild(sel);
+
+      } else if (item.type === "range") {
+        row.className = "setting col";
+        var head = el("div", "range-row");
+        var lbl = el("label", null, escapeHtml(item.label));
+        head.appendChild(lbl);
+        var vspan = el("span", "range-val", String(val));
+        head.appendChild(vspan);
+        row.appendChild(head);
+
+        var rng = document.createElement("input");
+        rng.type = "range";
+        rng.min = item.min; rng.max = item.max; rng.step = item.step || 1;
+        rng.value = val;
+        rng.setAttribute("data-key", item.key);
+        rng.setAttribute("data-type", "range");
+        rng.setAttribute("data-valtarget", "1");
+        row.appendChild(rng);
+        if (item.hint) row.appendChild(el("div", "hint", escapeHtml(item.hint)));
+
+      } else if (item.type === "number") {
+        var txt3 = el("div", "setting-text");
+        txt3.appendChild(el("label", null, escapeHtml(item.label)));
+        if (item.hint) txt3.appendChild(el("div", "hint", escapeHtml(item.hint)));
+        row.appendChild(txt3);
+
+        var num = document.createElement("input");
+        num.type = "number";
+        num.value = val;
+        if (item.min != null) num.min = item.min;
+        if (item.max != null) num.max = item.max;
+        num.setAttribute("data-key", item.key);
+        num.setAttribute("data-type", "number");
+        row.appendChild(num);
+
+      } else if (item.type === "text") {
+        row.className = "setting col";
+        var lbl2 = el("label", null, escapeHtml(item.label));
+        row.appendChild(lbl2);
+        var inp = document.createElement("input");
+        inp.type = "text";
+        inp.value = val || "";
+        inp.placeholder = item.placeholder || "";
+        inp.setAttribute("data-key", item.key);
+        inp.setAttribute("data-type", "text");
+        inp.style.width = "100%";
+        row.appendChild(inp);
+        if (item.hint) row.appendChild(el("div", "hint", escapeHtml(item.hint)));
+
+      } else if (item.type === "color") {
+        var txt4 = el("div", "setting-text");
+        txt4.appendChild(el("label", null, escapeHtml(item.label)));
+        if (item.hint) txt4.appendChild(el("div", "hint", escapeHtml(item.hint)));
+        row.appendChild(txt4);
+
+        var col = document.createElement("input");
+        col.type = "color";
+        col.value = val;
+        col.setAttribute("data-key", item.key);
+        col.setAttribute("data-type", "color");
+        row.appendChild(col);
+      }
+
+      wrap.appendChild(row);
+    });
+
+    root.appendChild(wrap);
+  });
+
+  var act = el("div", "settings-section");
+  act.appendChild(el("h3", null, "Actions"));
+  var actRow = el("div", "setting");
+  actRow.style.flexWrap = "wrap";
+  var b1 = el("button", "btn btn-ghost btn-sm", "Copy result");
+  b1.addEventListener("click", function () { copySummary(false); });
+  var b2 = el("button", "btn btn-ghost btn-sm", "Share result");
+  b2.addEventListener("click", shareResult);
+  var b3 = el("button", "btn btn-ghost btn-sm", "Export CSV");
+  b3.addEventListener("click", function () {
+    if (!Store.history.length) { toast("No history to export"); return; }
+    download("donut-speedtest-history.csv", historyToCsv(), "text/csv;charset=utf-8");
+  });
+  actRow.appendChild(b1); actRow.appendChild(b2); actRow.appendChild(b3);
+  act.appendChild(actRow);
+  root.appendChild(act);
+}
+
+function shareResult() {
+  var txt = summaryText(currentResults || Store.history[0] || null);
+  if (!txt) { toast("No result to share"); return; }
+  if (navigator.share) {
+    navigator.share({ title: "Donut Interest Speed Test result", text: txt })
+      .catch(function () { copySummary(false); });
+  } else {
+    copySummary(false);
+  }
+}
+
+function handleSettingChange(e) {
+  var target = e.target;
+  if (!target || !target.getAttribute) return;
+  var key = target.getAttribute("data-key");
+  if (!key) return;
+  var type = target.getAttribute("data-type");
+  var val;
+
+  if (type === "toggle") val = target.checked;
+  else if (type === "range" || type === "number") {
+    val = parseFloat(target.value);
+    if (!isFinite(val)) return;
+  } else val = target.value;
+
+  S[key] = val;
+
+  if (target.getAttribute("data-valtarget")) {
+    var row = target.closest(".setting");
+    if (row) {
+      var vs = row.querySelector(".range-val");
+      if (vs) vs.textContent = String(val);
+    }
+  }
+
+  saveStore();
+  applySettings();
+
+  if (key === "unit" || key === "decimals") {
+    updateUnitsEverywhere();
+  }
+  if (key === "serverPreset" || key === "customBase" || key === "engine") {
+    renderInfo(currentResults && currentResults.connection ? currentResults.connection : {});
+  }
+  if (key === "showGrade") {
+    if (!S.showGrade) hideGrade();
+    else if (currentResults) showGrade(currentResults);
+  }
+}
+
+function updateUnitsEverywhere() {
+  var u = unitInfo().label;
+  if (currentResults) {
+    if (currentResults.download && dom.vDown) dom.vDown.innerHTML = fmtSpeed(currentResults.download.bps) + '<span class="m-unit">' + u + "</span>";
+    if (currentResults.upload && dom.vUp) dom.vUp.innerHTML = fmtSpeed(currentResults.upload.bps) + '<span class="m-unit">' + u + "</span>";
+    if (dom.gaugeUnit) dom.gaugeUnit.textContent = u;
+  } else {
+    if (dom.vDown) dom.vDown.innerHTML = "—<span class=\"m-unit\">" + u + "</span>";
+    if (dom.vUp) dom.vUp.innerHTML = "—<span class=\"m-unit\">" + u + "</span>";
+  }
+  drawChart();
+}
+
+var mq = null;
+
+function resolveTheme() {
+  if (S.theme === "auto") {
+    try {
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    } catch (e) { return "dark"; }
+  }
+  return S.theme;
+}
+
+function applySettings() {
+  document.documentElement.setAttribute("data-theme", resolveTheme());
+  document.documentElement.style.setProperty("--accent", S.accent || "#22d3ee");
+
+  document.body.classList.toggle("compact", !!S.compact);
+  document.body.classList.toggle("hide-gauge", !S.showGauge);
+  document.body.classList.toggle("hide-chart", !S.showChart);
+  document.body.classList.toggle("hide-info", !S.showAdvancedInfo);
+
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", resolveTheme() === "light" ? "#eef2fa" : "#070b14");
+
+  updateUnitsEverywhere();
+  requestAnimationFrame(resizeChart);
+}
+
+function toggleTheme() {
+  var cur = resolveTheme();
+  S.theme = cur === "dark" ? "light" : "dark";
+  saveStore();
+  applySettings();
+  syncThemeButton();
+}
+
+function syncThemeButton() {
+  var btn = $("#btnTheme");
+  if (!btn) return;
+  var cur = resolveTheme();
+  btn.classList.toggle("on", S.theme === "auto");
+  btn.innerHTML = cur === "dark"
+    ? '<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'
+    : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>';
+}
+
+function renderHistory() {
+  var root = dom.historyBody;
+  if (!root) return;
+  var u = S.unit;
+  var f = UNIT_DEF[u].fromBytes;
+
+  if (!Store.history.length) {
+    root.innerHTML = '<div class="empty-state">' +
+      '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>' +
+      "<div>No tests saved yet</div></div>";
+    return;
+  }
+
+  var html = "";
+  Store.history.forEach(function (r, idx) {
+    var d = new Date(r.timestamp);
+    var dateStr = d.toLocaleDateString([], { month: "short", day: "numeric" }) +
+                  "<br>" + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    var dl = r.download ? (r.download.bps * f).toFixed(2) : "—";
+    var ul = r.upload ? (r.upload.bps * f).toFixed(2) : "—";
+    var pg = r.ping ? r.ping.median.toFixed(0) : "—";
+    var g = computeGrade(r);
+
+    html += '<div class="hist-item" data-idx="' + idx + '">' +
+      '<div class="h-date">' + dateStr + "</div>" +
+      '<div class="h-stats">' +
+        '<div class="h-stat" style="color:var(--accent)"><small>Down</small>' + dl + "</div>" +
+        '<div class="h-stat" style="color:var(--accent-2)"><small>Up</small>' + ul + "</div>" +
+        '<div class="h-stat"><small>Ping</small>' + pg + " ms</div>" +
+        (g ? '<div class="h-stat"><small>Grade</small>' + escapeHtml(g.grade) + "</div>" : "") +
+      "</div>" +
+      '<button class="hist-del" data-del="' + idx + '" aria-label="Delete entry">' +
+        '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>' +
+      "</button>" +
+    "</div>";
+  });
+  root.innerHTML = html;
+}
+
+function openPanel(id) {
+  var p = document.getElementById(id);
+  if (!p) return;
+  p.classList.add("open");
+  p.setAttribute("aria-hidden", "false");
+  dom.scrim.classList.add("show");
+  document.body.classList.add("no-scroll");
+}
+
+function closePanels() {
+  $$(".panel").forEach(function (p) {
+    p.classList.remove("open");
+    p.setAttribute("aria-hidden", "true");
+  });
+  dom.scrim.classList.remove("show");
+  document.body.classList.remove("no-scroll");
+}
+
+function bindEvents() {
+  dom.btnStart.addEventListener("click", startTest);
+  dom.btnStop.addEventListener("click", abortTest);
+
+  $("#btnSettings").addEventListener("click", function () {
+    renderSettings();
+    openPanel("settingsPanel");
+  });
+  $("#btnHistory").addEventListener("click", function () {
+    renderHistory();
+    openPanel("historyPanel");
+  });
+  $("#btnTheme").addEventListener("click", toggleTheme);
+
+  dom.scrim.addEventListener("click", closePanels);
+
+  $$("[data-close]").forEach(function (b) {
+    b.addEventListener("click", closePanels);
+  });
+
+  dom.settingsBody.addEventListener("input", handleSettingChange);
+  dom.settingsBody.addEventListener("change", handleSettingChange);
+
+  dom.infoGrid.addEventListener("click", function (e) {
+    var row = e.target.closest(".info-row[data-copy]");
+    if (!row) return;
+    var val = row.getAttribute("data-copy");
+    if (!val) return;
+    copyToClipboard(val).then(function (ok) {
+      if (!ok) return;
+      flashCopied(row, "copied", 900);
+      var disp = val.length > 46 ? val.slice(0, 44) + "…" : val;
+      toast("Copied: " + disp, "ok", 1500);
+    });
+  });
+
+  var copyAllBtn = $("#btnCopyAllInfo");
+  if (copyAllBtn) {
+    copyAllBtn.addEventListener("click", function () {
+      var rows = $$(".info-row", dom.infoGrid);
+      if (!rows.length) { toast("Nothing to copy"); return; }
+      var lines = [];
+      rows.forEach(function (r) {
+        var k = r.querySelector(".k");
+        var v = r.querySelector(".v");
+        if (k && v) lines.push(k.textContent + ": " + v.textContent);
+      });
+      var txt = "Donut Interest Speed Test — Connection Details\n" +
+                new Date().toLocaleString() + "\n" +
+                "-----------------------------------------------\n" +
+                lines.join("\n");
+      copyToClipboard(txt).then(function (ok) {
+        if (!ok) { toast("Copy failed", "err"); return; }
+        copyAllBtn.classList.add("copied");
+        var prev = copyAllBtn.textContent;
+        copyAllBtn.textContent = "Copied!";
+        setTimeout(function () {
+          copyAllBtn.classList.remove("copied");
+          copyAllBtn.textContent = prev;
+        }, 1400);
+        toast("All " + rows.length + " details copied", "ok");
+      });
+    });
+  }
+
+  var chips = [dom.chipIp, dom.chipIp6, dom.chipIsp, dom.chipLoc];
+  chips.forEach(function (chip) {
+    if (!chip) return;
+    chip.addEventListener("click", function () {
+      var v = chip.getAttribute("data-copy") || "";
+      if (!v || v === "unavailable" || v === "unknown") { toast("No value to copy"); return; }
+      copyToClipboard(v).then(function (ok) {
+        if (!ok) return;
+        flashCopied(chip, "copied", 900);
+        var disp = v.length > 34 ? v.slice(0, 32) + "…" : v;
+        toast("Copied: " + disp, "ok", 1500);
+      });
+    });
+  });
+
+  $$(".metric").forEach(function (m) {
+    m.addEventListener("click", function () {
+      var labelEl = m.querySelector(".m-label");
+      var valueEl = m.querySelector(".m-value");
+      if (!labelEl || !valueEl) return;
+      var label = labelEl.textContent.trim();
+      var val = valueEl.textContent.trim();
+      if (!val || val.replace(/—/g, "").trim() === "" || val.indexOf("—") === 0) {
+        toast("No value to copy yet");
+        return;
+      }
+      copyToClipboard(label + ": " + val).then(function (ok) {
+        if (!ok) return;
+        flashCopied(m, "copied", 800);
+        toast("Copied: " + label + " = " + val, "ok", 1500);
+      });
+    });
+  });
+
+  dom.historyBody.addEventListener("click", function (e) {
+    var del = e.target.closest("[data-del]");
+    if (del) {
+      var i = parseInt(del.getAttribute("data-del"), 10);
+      Store.history.splice(i, 1);
+      saveStore();
+      renderHistory();
+      return;
+    }
+    var item = e.target.closest(".hist-item");
+    if (item) {
+      var idx = parseInt(item.getAttribute("data-idx"), 10);
+      var r = Store.history[idx];
+      if (r) {
+        currentResults = r;
+        if (r.download && dom.vDown) dom.vDown.innerHTML = fmtSpeed(r.download.bps) + '<span class="m-unit">' + unitInfo().label + "</span>";
+        if (r.upload && dom.vUp) dom.vUp.innerHTML = fmtSpeed(r.upload.bps) + '<span class="m-unit">' + unitInfo().label + "</span>";
+        if (r.ping) {
+          if (dom.vPing) dom.vPing.innerHTML = r.ping.median.toFixed(1) + '<span class="m-unit">ms</span>';
+          if (dom.vJitter) dom.vJitter.innerHTML = r.ping.jitter.toFixed(1) + '<span class="m-unit">ms</span>';
+          if (dom.vLoss) dom.vLoss.innerHTML = r.ping.loss.toFixed(1) + '<span class="m-unit">%</span>';
+          if (dom.sPing) dom.sPing.textContent = "min " + r.ping.min.toFixed(1) + " · max " + r.ping.max.toFixed(1);
+        }
+        if (r.connection) {
+          renderInfo(r.connection);
+          updateChips(r.connection);
+        }
+        var bp = r.download ? r.download.bps : (r.upload ? r.upload.bps : 0);
+        if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(bp);
+        if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+        updateGaugeNeedle(toDisplay(bp));
+        showGrade(r);
+        setPhaseLabel("Loaded from history");
+        closePanels();
+        toast("Loaded result from history", "ok");
+      }
+    }
+  });
+
+  $("#btnClearHistory").addEventListener("click", function () {
+    if (!Store.history.length) { toast("History is already empty"); return; }
+    if (window.confirm("Delete all saved test results?")) {
+      Store.history = [];
+      saveStore();
+      renderHistory();
+      toast("History cleared", "ok");
+    }
+  });
+
+  $("#btnExportCsv").addEventListener("click", function () {
+    if (!Store.history.length) { toast("No history to export"); return; }
+    download("donut-speedtest-history.csv", historyToCsv(), "text/csv;charset=utf-8");
+  });
+
+  $("#btnExportJson").addEventListener("click", function () {
+    if (!Store.history.length) { toast("No history to export"); return; }
+    download("donut-speedtest-history.json", JSON.stringify(Store.history, null, 2), "application/json");
+  });
+
+  $("#btnResetSettings").addEventListener("click", function () {
+    if (!window.confirm("Reset all settings to their defaults?")) return;
+    for (var k in DEFAULTS) {
+      if (Object.prototype.hasOwnProperty.call(DEFAULTS, k)) S[k] = DEFAULTS[k];
+    }
+    saveStore();
+    applySettings();
+    syncThemeButton();
+    renderSettings();
+    toast("Settings reset", "ok");
+  });
+
+  $("#btnExportCfg").addEventListener("click", function () {
+    download("donut-speedtest-config.json", JSON.stringify(S, null, 2), "application/json");
+  });
+
+  $("#btnImportCfg").addEventListener("click", function () {
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".json,application/json";
+    inp.addEventListener("change", function () {
+      var file = inp.files && inp.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var obj = JSON.parse(reader.result);
+          for (var k in DEFAULTS) {
+            if (Object.prototype.hasOwnProperty.call(obj, k)) S[k] = obj[k];
+          }
+          saveStore();
+          applySettings();
+          syncThemeButton();
+          renderSettings();
+          toast("Configuration imported", "ok");
+        } catch (e) {
+          toast("Invalid configuration file", "err");
+        }
+      };
+      reader.readAsText(file);
+    });
+    inp.click();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+
+    if (e.code === "Space" || e.key === " ") {
+      e.preventDefault();
+      if (running) abortTest(); else startTest();
+    } else if (e.key === "Escape") {
+      closePanels();
+    } else if (e.key === "s" || e.key === "S") {
+      renderSettings();
+      openPanel("settingsPanel");
+    } else if (e.key === "h" || e.key === "H") {
+      renderHistory();
+      openPanel("historyPanel");
+    } else if (e.key === "t" || e.key === "T") {
+      toggleTheme();
+    } else if (e.key === "c" || e.key === "C") {
+      if (e.shiftKey) copySummary(false);
+    }
+  });
+
+  window.addEventListener("resize", function () {
+    resizeChart();
+  });
+
+  window.addEventListener("orientationchange", function () {
+    setTimeout(resizeChart, 250);
+  });
+
+  try {
+    mq = window.matchMedia("(prefers-color-scheme: light)");
+    var handler = function () {
+      if (S.theme === "auto") { applySettings(); syncThemeButton(); }
+    };
+    if (mq.addEventListener) mq.addEventListener("change", handler);
+    else if (mq.addListener) mq.addListener(handler);
+  } catch (e) {}
+
+  window.addEventListener("beforeunload", function (e) {
+    if (running) {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    }
+  });
+}
+
+function init() {
+  loadStore();
+  S = Store.settings;
+
+  buildGauge();
+  applySettings();
+  syncThemeButton();
+  resetMetricsUI();
+  bindEvents();
+  resizeChart();
+
+  if (dom.stEngine) dom.stEngine.textContent = useFetchEngine() ? "Fetch" : "XHR";
+  if (dom.stStreams) dom.stStreams.textContent = "0";
+
+  if (S.ipLookup) {
+    fetchConnectionInfo().then(function (info) {
+      renderInfo(info);
+      updateChips(info);
+      if (currentResults) currentResults.connection = info;
+    });
+  } else {
+    if (dom.chipIp) dom.chipIp.innerHTML = '<i class="dot"></i>IPv4: <b>lookup disabled</b>';
+    if (dom.chipIp6) dom.chipIp6.innerHTML = '<i class="dot"></i>IPv6: <b>lookup disabled</b>';
+    if (dom.chipIsp) dom.chipIsp.innerHTML = "ISP: <b>lookup disabled</b>";
+    if (dom.chipLoc) dom.chipLoc.innerHTML = "Location: <b>lookup disabled</b>";
+    renderInfo({ "Test engine": useFetchEngine() ? "Fetch streams" : "XHR", "Streams": String(S.parallel) });
+  }
+
+  renderHistory();
+
+  if (S.autoStart) {
+    setTimeout(function () { startTest(); }, 800);
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+})();
+</script>
+</body>
+</html>
