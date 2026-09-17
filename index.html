@@ -2,11 +2,16 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#070b14">
-<meta name="description" content="Donut Interest Speed Test — advanced browser-based internet speed test with download, upload, ping, jitter, packet loss and ISP info.">
-<title>Donut Interest Speed Test</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Donut Speed Test">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Donut Internet Speed Test — advanced browser-based internet speed test with download, upload, ping, jitter, packet loss and ISP info.">
+<title>Donut Internet Speed Test</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <style>
 :root{
@@ -45,7 +50,12 @@ html[data-theme="light"]{
   --shadow:0 20px 50px rgba(30,41,59,.18);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html{
+  -webkit-text-size-adjust:100%;
+  -ms-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+html,body{min-height:100%;height:100%}
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
@@ -53,12 +63,18 @@ body{
   color:var(--text);
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
+  overscroll-behavior-y:contain;
   transition:background .3s ease,color .3s ease;
 }
 body.no-scroll{overflow:hidden}
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer;border:none;background:none}
 a{color:var(--accent)}
+
+button,.btn,.chip,.metric,.info-row,.preset-btn,.icon-btn,.copy-all-btn,.switch,.switch .slider,.hist-del,.hist-item,.setting,.setting-text label,.card-title,.panel-head h2{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
 
 .bg-orbs{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
 .bg-orbs::before,.bg-orbs::after{
@@ -70,7 +86,7 @@ a{color:var(--accent)}
 @keyframes float{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(4vmax,3vmax,0) scale(1.15)}}
 @media (prefers-reduced-motion:reduce){.bg-orbs::before,.bg-orbs::after{animation:none}}
 
-.app{max-width:1120px;margin:0 auto;padding:18px 16px 64px;position:relative}
+.app{max-width:1120px;margin:0 auto;padding:18px 16px 64px;position:relative;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
 
 .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
 .brand{display:flex;align-items:center;gap:11px;min-width:0}
@@ -84,17 +100,18 @@ a{color:var(--accent)}
 .brand h1 span{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .brand p{margin:1px 0 0;font-size:11px;color:var(--text-faint);letter-spacing:.5px;text-transform:uppercase;font-weight:600}
 
-.conn-chips{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 240px;justify-content:center}
+.conn-chips{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 240px;justify-content:center;min-width:0}
 .chip{
-  display:inline-flex;align-items:center;gap:6px;max-width:100%;
+  display:inline-flex;align-items:center;gap:6px;
+  max-width:240px;min-width:0;
   padding:6px 11px;border-radius:999px;font-size:12px;font-weight:600;
   background:var(--card);border:1px solid var(--border);color:var(--text-dim);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;overflow:hidden;
   cursor:pointer;transition:border-color .15s,background .15s,transform .15s;
 }
 .chip:hover{border-color:var(--border-strong);background:var(--card-2)}
 .chip:active{transform:scale(.97)}
-.chip b{color:var(--text);font-weight:700}
+.chip b{color:var(--text);font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:0 0 auto;box-shadow:0 0 0 3px rgba(52,211,153,.18)}
 .chip.loading .dot{background:var(--warn);box-shadow:0 0 0 3px rgba(251,191,36,.18);animation:pulse 1.2s infinite}
 .chip .v4{color:var(--accent)}
@@ -126,21 +143,42 @@ a{color:var(--accent)}
 .card-title{
   font-size:12px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
   color:var(--text-faint);margin:0 0 14px;display:flex;align-items:center;gap:8px;
+  flex-wrap:wrap;
 }
 .card-title svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-.copy-all-btn{
+.head-actions{display:flex;gap:6px;margin-left:auto;align-items:center;flex-wrap:wrap}
+.mini-btn{
   background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);
-  border-radius:9px;padding:5px 11px;font-size:10.5px;font-weight:800;
-  letter-spacing:.7px;text-transform:uppercase;margin-left:auto;
-  transition:all .15s ease;
+  border-radius:9px;padding:5px 10px;font-size:10.5px;font-weight:800;
+  letter-spacing:.7px;text-transform:uppercase;
+  transition:all .15s ease;display:inline-flex;align-items:center;gap:5px;
+  min-height:30px;
 }
-.copy-all-btn:hover{color:var(--text);border-color:var(--border-strong);background:var(--card)}
-.copy-all-btn:active{transform:scale(.95)}
-.copy-all-btn.copied{color:var(--good);border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.1)}
+.mini-btn:hover{color:var(--text);border-color:var(--border-strong);background:var(--card)}
+.mini-btn:active{transform:scale(.95)}
+.mini-btn.copied{color:var(--good);border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.1)}
+.mini-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.preset-btn{
+  flex:1 1 0;min-width:88px;
+  padding:10px 12px;border-radius:12px;
+  background:var(--card);border:1px solid var(--border);
+  color:var(--text-dim);font-weight:750;font-size:12px;
+  letter-spacing:.3px;text-align:center;
+  transition:all .15s ease;min-height:48px;
+}
+.preset-btn:hover{border-color:var(--border-strong);color:var(--text)}
+.preset-btn:active{transform:scale(.97)}
+.preset-btn.active{
+  background:linear-gradient(120deg,rgba(34,211,238,.18),rgba(168,85,247,.18));
+  border-color:var(--accent);color:var(--text);
+}
+.preset-btn small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--text-faint);text-transform:uppercase;margin-top:3px}
 
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:center}
-@media (max-width:820px){.hero{grid-template-columns:1fr;gap:8px}}
+@media (max-width:820px){.hero{grid-template-columns:1fr;gap:10px}}
 
 .gauge-wrap{position:relative;width:100%;max-width:360px;margin:0 auto;aspect-ratio:1/1}
 .gauge-wrap svg{width:100%;height:100%;display:block;overflow:visible}
@@ -166,7 +204,7 @@ a{color:var(--accent)}
   border-radius:14px;padding:15px 22px;font-weight:750;font-size:15px;letter-spacing:.2px;
   display:inline-flex;align-items:center;justify-content:center;gap:9px;
   transition:transform .15s ease,box-shadow .2s ease,opacity .2s ease;
-  border:1px solid transparent;white-space:nowrap;
+  border:1px solid transparent;white-space:nowrap;min-height:48px;
 }
 .btn:active{transform:scale(.97)}
 .btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -180,7 +218,7 @@ html[data-theme="light"] .btn-primary{color:#fff}
 .btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 .btn-ghost{background:var(--card);border-color:var(--border-strong);color:var(--text)}
 .btn-ghost:hover{background:var(--card-2)}
-.btn-sm{padding:9px 14px;font-size:13px;border-radius:11px}
+.btn-sm{padding:9px 14px;font-size:13px;border-radius:11px;min-height:38px}
 .btn-danger{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.35);color:var(--bad)}
 
 .progress-track{height:7px;border-radius:999px;background:var(--track);overflow:hidden}
@@ -196,13 +234,14 @@ html[data-theme="light"] .btn-primary{color:#fff}
 }
 .status-bar span{display:inline-flex;align-items:center;gap:6px}
 .status-bar b{color:var(--text-dim);font-variant-numeric:tabular-nums}
+.status-bar b.warn{color:var(--warn)}
 
 .grade-badge{
   display:none;align-items:center;gap:14px;padding:13px 16px;border-radius:15px;
   background:var(--card);border:1px solid var(--border);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
 }
-.grade-badge.show{display:flex;animation:fadeIn .4s ease}
+.grade-badge.show{display:flex;animation:fadeIn .4s ease;flex-wrap:wrap}
 .grade-badge .g-score{
   font-size:38px;font-weight:800;letter-spacing:-2px;line-height:1;
   background:linear-gradient(135deg,var(--accent),var(--accent-2));
@@ -212,6 +251,14 @@ html[data-theme="light"] .btn-primary{color:#fff}
 .grade-badge .g-info{flex:1;min-width:0}
 .grade-badge .g-title{font-size:10.5px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--text-faint)}
 .grade-badge .g-label{font-size:12.5px;font-weight:650;color:var(--text);margin-top:4px;line-height:1.45}
+.grade-badge .g-caps{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;width:100%}
+.cap-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 9px;border-radius:999px;
+  font-size:10.5px;font-weight:750;letter-spacing:.3px;
+  background:rgba(34,211,238,.14);border:1px solid rgba(34,211,238,.3);color:var(--accent);
+}
+.cap-tag.no{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.28);color:var(--bad)}
 .grade-badge.grade-a{border-color:rgba(52,211,153,.5)}
 .grade-badge.grade-b{border-color:rgba(34,211,238,.5)}
 .grade-badge.grade-c{border-color:rgba(251,191,36,.5)}
@@ -244,19 +291,19 @@ html[data-theme="light"] .btn-primary{color:#fff}
   font-variant-numeric:tabular-nums;color:var(--text);
 }
 .metric .m-unit{font-size:12px;font-weight:700;color:var(--text-faint);margin-left:5px;letter-spacing:.4px}
-.metric .m-sub{font-size:11px;color:var(--text-faint);margin-top:7px;font-weight:600}
+.metric .m-sub{font-size:11px;color:var(--text-faint);margin-top:7px;font-weight:600;line-height:1.35}
 .metric.dl .m-value{color:var(--accent)}
 .metric.ul .m-value{color:var(--accent-2)}
 
 .chart-card{padding:16px 16px 10px}
 .chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
-.legend{display:flex;gap:14px;font-size:11.5px;font-weight:700;color:var(--text-faint)}
+.legend{display:flex;gap:14px;font-size:11.5px;font-weight:700;color:var(--text-faint);flex-wrap:wrap}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:middle}
-.chart-box{position:relative;width:100%;height:190px}
+.chart-box{position:relative;width:100%;height:190px;overflow:hidden;border-radius:10px}
 .chart-box canvas{width:100%;height:100%;display:block;border-radius:10px}
 .chart-empty{
   position:absolute;inset:0;display:grid;place-items:center;color:var(--text-faint);
-  font-size:12.5px;font-weight:600;pointer-events:none;
+  font-size:12.5px;font-weight:600;pointer-events:none;text-align:center;padding:12px;
 }
 
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
@@ -265,6 +312,7 @@ html[data-theme="light"] .btn-primary{color:#fff}
   padding:10px 13px;border-radius:12px;background:var(--card-2);border:1px solid var(--border);
   font-size:12.5px;min-width:0;position:relative;
   cursor:pointer;transition:background .15s,border-color .15s,transform .12s;
+  min-height:40px;
 }
 .info-row:hover{background:rgba(34,211,238,.08);border-color:var(--border-strong)}
 .info-row:active{transform:scale(.99)}
@@ -288,6 +336,7 @@ html[data-theme="light"] .btn-primary{color:#fff}
   background:var(--bg);border-left:1px solid var(--border);
   transform:translateX(102%);transition:transform .34s cubic-bezier(.22,1,.36,1);
   display:flex;flex-direction:column;box-shadow:-24px 0 60px rgba(0,0,0,.45);
+  height:100dvh;
 }
 html[data-theme="light"] .panel{background:#f7f9ff}
 .panel.open{transform:translateX(0)}
@@ -312,6 +361,7 @@ html[data-theme="light"] .panel{background:#f7f9ff}
 .setting{
   display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:13px;
   background:var(--card-2);border:1px solid var(--border);margin-bottom:8px;
+  min-height:52px;
 }
 .setting.col{flex-direction:column;align-items:stretch;gap:9px}
 .setting-text{flex:1 1 auto;min-width:0}
@@ -334,12 +384,12 @@ html[data-theme="light"] .panel{background:#f7f9ff}
   background:var(--track);outline:none;margin:6px 0 2px;
 }
 .setting input[type="range"]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
   background:var(--accent);cursor:pointer;border:3px solid var(--bg);
   box-shadow:0 2px 8px rgba(0,0,0,.4);
 }
 .setting input[type="range"]::-moz-range-thumb{
-  width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg);
+  width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg);
 }
 .setting input[type="color"]{
   -webkit-appearance:none;appearance:none;width:46px;height:32px;border:1px solid var(--border-strong);
@@ -366,12 +416,14 @@ html[data-theme="light"] .panel{background:#f7f9ff}
 .hist-item{
   display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:13px;
   background:var(--card-2);border:1px solid var(--border);margin-bottom:8px;
+  cursor:pointer;
 }
+.hist-item:active{background:var(--card)}
 .hist-item .h-date{font-size:11px;color:var(--text-faint);font-weight:650;flex:0 0 auto;width:74px;line-height:1.35}
 .hist-item .h-stats{display:flex;gap:14px;flex:1 1 auto;flex-wrap:wrap;min-width:0}
 .hist-item .h-stat{font-size:13px;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
 .hist-item .h-stat small{display:block;font-size:9.5px;color:var(--text-faint);font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:2px}
-.hist-del{color:var(--text-faint);padding:6px;border-radius:8px;flex:0 0 auto}
+.hist-del{color:var(--text-faint);padding:8px;border-radius:8px;flex:0 0 auto;min-width:36px;min-height:36px;display:grid;place-items:center}
 .hist-del:hover{color:var(--bad);background:rgba(248,113,113,.1)}
 .hist-del svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .empty-state{text-align:center;padding:44px 16px;color:var(--text-faint);font-size:13px;font-weight:600}
@@ -388,7 +440,7 @@ html[data-theme="light"] .panel{background:#f7f9ff}
 .toast.err{border-color:rgba(248,113,113,.5)}
 @keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
 
-.footer{text-align:center;font-size:11.5px;color:var(--text-faint);margin-top:26px;line-height:1.7;font-weight:600}
+.footer{text-align:center;font-size:11.5px;color:var(--text-faint);margin-top:26px;line-height:1.7;font-weight:600;padding-bottom:env(safe-area-inset-bottom)}
 .footer b{color:var(--text-dim)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 body.compact .card{padding:13px;margin-bottom:11px}
@@ -398,10 +450,119 @@ body.compact .chart-box{height:140px}
 body.hide-gauge .gauge-wrap{display:none}
 body.hide-chart .chart-card{display:none}
 body.hide-info .info-card{display:none}
+body.hide-presets .preset-row{display:none}
+
 *{scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
 ::-webkit-scrollbar-track{background:transparent}
+
+@media (hover: none) {
+  .chip:hover{border-color:var(--border);background:var(--card)}
+  .metric:hover{border-color:var(--border)}
+  .metric.active{border-color:var(--accent)}
+  .info-row:hover{background:var(--card-2);border-color:var(--border)}
+  .icon-btn:hover{color:var(--text-dim);border-color:var(--border);transform:none}
+  .btn-ghost:hover{background:var(--card)}
+  .preset-btn:hover{border-color:var(--border);color:var(--text-dim)}
+  .preset-btn.active{border-color:var(--accent);color:var(--text)}
+  .hist-del:hover{color:var(--text-faint);background:transparent}
+  .mini-btn:hover{color:var(--text-dim);border-color:var(--border);background:var(--card-2)}
+}
+
+@media (max-width: 720px) {
+  .app{padding:12px 12px 56px}
+  .topbar{gap:10px;margin-bottom:14px}
+  .brand h1{font-size:16px}
+  .brand p{font-size:10px;letter-spacing:.4px}
+  .logo{width:38px;height:38px;border-radius:12px}
+  .logo svg{width:20px;height:20px}
+  .icon-btn{width:40px;height:40px;border-radius:12px}
+  .icon-btn svg{width:18px;height:18px}
+  .card{padding:14px;margin-bottom:12px;border-radius:16px}
+  .card-title{font-size:11px;margin-bottom:11px}
+  .card-title svg{width:14px;height:14px}
+  .hero{gap:6px}
+  .gauge-wrap{max-width:280px}
+  .gauge-value{font-size:clamp(34px,11vw,46px)}
+  .gauge-unit{font-size:13px}
+  .gauge-phase{font-size:10px}
+  .btn{padding:13px 18px;font-size:14.5px;min-height:50px}
+  .btn svg{width:17px;height:17px}
+  .preset-btn{padding:9px 8px;font-size:11.5px;min-height:50px;min-width:0;flex:1 1 30%}
+  .preset-btn small{font-size:9px;margin-top:2px}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+  .metric{padding:12px;border-radius:14px;min-height:88px}
+  .metric .m-value{font-size:22px}
+  .metric .m-unit{font-size:11px}
+  .metric .m-label{font-size:9.5px;letter-spacing:.8px;margin-bottom:6px}
+  .metric .m-label svg{width:12px;height:12px}
+  .metric .m-sub{font-size:10px;margin-top:5px}
+  .chart-box{height:150px}
+  .chart-card{padding:12px 12px 8px}
+  .legend{font-size:10.5px;gap:10px}
+  .info-grid{grid-template-columns:1fr;gap:8px}
+  .info-row{padding:10px 12px;font-size:12px;min-height:44px}
+  .info-row .k{font-size:10px}
+  .status-bar{font-size:10.5px;gap:8px 12px}
+  .grade-badge{padding:11px 13px;border-radius:13px}
+  .grade-badge .g-score{font-size:32px;min-width:52px}
+  .grade-badge .g-title{font-size:10px}
+  .grade-badge .g-label{font-size:11.5px}
+  .cap-tag{font-size:10px;padding:3px 8px}
+  .chip{font-size:11px;padding:5px 10px;max-width:200px}
+  .conn-chips{gap:6px}
+  .panel-body{padding:14px 14px 32px}
+  .setting{padding:10px 12px;gap:10px}
+  .setting-text label{font-size:13px}
+  .setting-text .hint{font-size:10.5px}
+  .panel-head{padding:14px 14px}
+  .panel-foot{padding:10px 14px}
+  .toast{font-size:12.5px;padding:11px 14px}
+  .footer{font-size:10.5px}
+}
+
+@media (max-width: 460px) {
+  .brand h1{font-size:14.5px}
+  .brand h1 span{display:block}
+  .logo{width:34px;height:34px}
+  .logo svg{width:18px;height:18px}
+  .icon-btn{width:38px;height:38px;border-radius:11px}
+  .icon-btn svg{width:17px;height:17px}
+  .top-actions{gap:6px}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:8px}
+  .metric{padding:11px;min-height:84px}
+  .metric .m-value{font-size:19px;letter-spacing:-.8px}
+  .metric .m-unit{font-size:10px}
+  .gauge-wrap{max-width:240px}
+  .gauge-value{font-size:38px}
+  .chip{font-size:10.5px;padding:5px 9px;max-width:170px}
+  .conn-chips{justify-content:flex-start}
+  .conn-chips .chip:nth-child(n+3){flex:1 1 auto;min-width:0}
+  .chart-box{height:130px}
+  .preset-btn{font-size:11px;padding:8px 4px}
+  .preset-btn small{font-size:8.5px}
+  .btn{padding:12px 14px;font-size:14px;min-height:48px}
+  .btn-primary span{font-size:14px}
+  .status-bar{font-size:10px;gap:6px 10px}
+  .status-bar span{gap:4px}
+  .info-row{font-size:11.5px;padding:9px 11px}
+  .info-row .k{font-size:9.5px}
+  .grade-badge .g-score{font-size:28px;min-width:44px}
+  .grade-badge{gap:10px}
+}
+
+@media (max-width: 360px) {
+  .brand h1{font-size:13px}
+  .brand p{font-size:9px}
+  .gauge-wrap{max-width:210px}
+  .metric .m-value{font-size:17px}
+  .metric .m-label{font-size:9px}
+  .chip{font-size:10px;max-width:150px}
+  .metrics{gap:6px}
+  .card{padding:12px}
+  .preset-btn{font-size:10.5px}
+}
 </style>
 </head>
 <body>
@@ -414,7 +575,7 @@ body.hide-info .info-card{display:none}
         <svg viewBox="0 0 24 24"><path d="M12 20v-9"/><path d="M6.5 13.5a7 7 0 0 1 11 0"/><path d="M3.5 10a11 11 0 0 1 17 0"/><circle cx="12" cy="20" r="1.2" fill="currentColor" stroke="none"/></svg>
       </div>
       <div>
-        <h1>Donut Interest <span>Speed Test</span></h1>
+        <h1>Donut Internet <span>Speed Test</span></h1>
         <p>Network Diagnostics</p>
       </div>
     </div>
@@ -450,6 +611,12 @@ body.hide-info .info-card{display:none}
     </div>
 
     <div class="hero-side">
+      <div class="preset-row" id="presetRow">
+        <button class="preset-btn" data-preset="quick" type="button">Quick<small>5s + 5s</small></button>
+        <button class="preset-btn active" data-preset="standard" type="button">Standard<small>10s + 10s</small></button>
+        <button class="preset-btn" data-preset="thorough" type="button">Thorough<small>30s + 30s</small></button>
+      </div>
+
       <div class="controls">
         <button class="btn btn-primary" id="btnStart">
           <svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
@@ -502,6 +669,11 @@ body.hide-info .info-card{display:none}
       <div class="m-value" id="vLoss">—<span class="m-unit">%</span></div>
       <div class="m-sub" id="sLoss">Not tested</div>
     </div>
+    <div class="metric" id="mStability" title="Click to copy stability">
+      <div class="m-label"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 3-8 2 2h3"/></svg>Stability</div>
+      <div class="m-value" id="vStability">—<span class="m-unit"></span></div>
+      <div class="m-sub" id="sStability">Not tested</div>
+    </div>
   </section>
 
   <section class="card chart-card" id="chartCard">
@@ -514,6 +686,12 @@ body.hide-info .info-card{display:none}
         <span><i style="background:var(--accent)"></i>Download</span>
         <span><i style="background:var(--accent-2)"></i>Upload</span>
       </div>
+      <div class="head-actions">
+        <button class="mini-btn" id="btnSaveChart" type="button" title="Save chart as image">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          Save
+        </button>
+      </div>
     </div>
     <div class="chart-box">
       <canvas id="chart"></canvas>
@@ -525,14 +703,16 @@ body.hide-info .info-card{display:none}
     <div class="card-title">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg>
       Connection Details
-      <button class="copy-all-btn" id="btnCopyAllInfo" type="button" title="Copy all details">Copy all</button>
+      <div class="head-actions">
+        <button class="mini-btn" id="btnCopyAllInfo" type="button" title="Copy all details">Copy all</button>
+      </div>
     </div>
     <div class="info-grid" id="infoGrid"></div>
   </section>
 
   <div class="footer">
-    <b>Donut Interest Speed Test</b> · Runs entirely in your browser · No data is stored on any server<br>
-    Measurements use parallel HTTP streams against a global CDN edge. Click any detail to copy it.
+    <b>Donut Internet Speed Test</b> · Runs entirely in your browser · No data is stored on any server<br>
+    Measurements use parallel HTTP streams against a global CDN edge. Tap any detail to copy it.
   </div>
 </div>
 
@@ -586,6 +766,34 @@ function el(tag, cls, html) {
   if (cls) n.className = cls;
   if (html != null) n.innerHTML = html;
   return n;
+}
+
+function toStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) {
+    var parts = [];
+    for (var i = 0; i < v.length; i++) {
+      var s = toStr(v[i]);
+      if (s) parts.push(s);
+    }
+    return parts.join(", ");
+  }
+  if (typeof v === "object") {
+    if (v.iata && typeof v.iata === "string") return v.iata;
+    if (v.name && typeof v.name === "string") return v.name;
+    if (v.code && typeof v.code === "string") return v.code;
+    try {
+      var keys = Object.keys(v);
+      var pairs = [];
+      for (var k = 0; k < keys.length && k < 3; k++) {
+        pairs.push(keys[k] + "=" + toStr(v[keys[k]]));
+      }
+      return pairs.join(", ");
+    } catch (e) { return ""; }
+  }
+  return String(v);
 }
 
 function fmtBytes(b) {
@@ -662,7 +870,9 @@ var SCHEMA = [
         hint: "Automatically scales transfer chunk size to your connection speed." },
       { key: "minChunkKB", label: "Minimum chunk size (KB)", type: "number", def: 256, min: 16, max: 10240 },
       { key: "maxChunkMB", label: "Maximum chunk size (MB)", type: "number", def: 64, min: 1, max: 256 },
-      { key: "timeout", label: "Request timeout (s)", type: "number", def: 20, min: 3, max: 120 }
+      { key: "timeout", label: "Request timeout (s)", type: "number", def: 20, min: 3, max: 120 },
+      { key: "dataCapMB", label: "Data warning threshold (MB)", type: "number", def: 500, min: 0, max: 100000,
+        hint: "Shows a warning in the status bar when transferred data exceeds this. Set 0 to disable." }
     ]
   },
   {
@@ -687,16 +897,20 @@ var SCHEMA = [
   {
     id: "display", title: "Display", icon: "🎨",
     items: [
-      { key: "unit", label: "Speed unit", type: "select", def: "Mbps",
-        options: [["Mbps","Mbps — megabits per second"],["MBps","MB/s — megabytes per second"],
-                  ["Gbps","Gbps — gigabits per second"],["Kbps","Kbps — kilobits per second"]] },
-      { key: "decimals", label: "Decimal places", type: "range", def: 2, min: 0, max: 3, step: 1 },
+      { key: "unit", label: "Speed unit", type: "select", def: "Auto",
+        options: [["Auto","Auto (bits — Kbps/Mbps/Gbps)"],["AutoB","Auto (bytes — KB/s/MB/s/GB/s)"],
+                  ["Mbps","Mbps — megabits per second"],["MBps","MB/s — megabytes per second"],
+                  ["Gbps","Gbps — gigabits per second"],["Kbps","Kbps — kilobits per second"],
+                  ["KBps","KB/s — kilobytes per second"]] },
+      { key: "decimals", label: "Decimal places", type: "select", def: "auto",
+        options: [["auto","Auto (adapts to unit)"],["0","0"],["1","1"],["2","2"],["3","3"]] },
       { key: "theme", label: "Theme", type: "select", def: "auto",
         options: [["auto","Follow system"],["dark","Dark"],["light","Light"]] },
       { key: "accent", label: "Accent colour", type: "color", def: "#22d3ee" },
       { key: "showGauge", label: "Analog gauge", type: "toggle", def: true },
       { key: "showChart", label: "Live throughput chart", type: "toggle", def: true },
       { key: "showAdvancedInfo", label: "Connection details panel", type: "toggle", def: true },
+      { key: "showPresets", label: "Show quick preset buttons", type: "toggle", def: true },
       { key: "reduceMotion", label: "Reduce motion", type: "toggle", def: false },
       { key: "compact", label: "Compact layout", type: "toggle", def: false }
     ]
@@ -715,6 +929,8 @@ var SCHEMA = [
         hint: "Adds your browser, OS, device type and screen size to the details panel." },
       { key: "showGrade", label: "Show connection grade after test", type: "toggle", def: true,
         hint: "Displays an A+ to F grade based on speed, latency and jitter." },
+      { key: "showCaps", label: "Show capability tags", type: "toggle", def: true,
+        hint: "Displays tags like '4K Video' or 'Gaming' based on your results." },
       { key: "wakeLock", label: "Keep screen awake during test", type: "toggle", def: true },
       { key: "autoCopy", label: "Copy summary after test", type: "toggle", def: false }
     ]
@@ -771,6 +987,7 @@ var dom = {
   gaugeUnit:    $("#gaugeUnit"),
   gaugePhase:   $("#gaugePhase"),
   gradeBadge:   $("#gradeBadge"),
+  presetRow:    $("#presetRow"),
   btnStart:     $("#btnStart"),
   btnStartLbl:  $("#btnStartLabel"),
   btnStop:      $("#btnStop"),
@@ -784,6 +1001,7 @@ var dom = {
   vPing:        $("#vPing"),
   vJitter:      $("#vJitter"),
   vLoss:        $("#vLoss"),
+  vStability:   $("#vStability"),
   uDown:        $("#uDown"),
   uUp:          $("#uUp"),
   sDown:        $("#sDown"),
@@ -791,11 +1009,13 @@ var dom = {
   sPing:        $("#sPing"),
   sJitter:      $("#sJitter"),
   sLoss:        $("#sLoss"),
+  sStability:   $("#sStability"),
   mDown:        $("#mDown"),
   mUp:          $("#mUp"),
   mPing:        $("#mPing"),
   mJitter:      $("#mJitter"),
   mLoss:        $("#mLoss"),
+  mStability:   $("#mStability"),
   chart:        $("#chart"),
   chartEmpty:   $("#chartEmpty"),
   infoGrid:     $("#infoGrid"),
@@ -867,29 +1087,63 @@ function flashCopied(node, cls, ms) {
 }
 
 var UNIT_DEF = {
-  Mbps: { factor: 8e-6, label: "Mbps", fromBytes: 8 / 1e6 },
-  MBps: { factor: 1e-6, label: "MB/s", fromBytes: 1 / 1e6 },
-  Gbps: { factor: 8e-9, label: "Gbps", fromBytes: 8 / 1e9 },
-  Kbps: { factor: 8e-3, label: "Kbps", fromBytes: 8 / 1e3 }
+  Mbps: { fromBytes: 8 / 1e6,  label: "Mbps" },
+  MBps: { fromBytes: 1 / 1e6,  label: "MB/s" },
+  Gbps: { fromBytes: 8 / 1e9,  label: "Gbps" },
+  Kbps: { fromBytes: 8 / 1e3,  label: "Kbps" },
+  KBps: { fromBytes: 1 / 1e3,  label: "KB/s" },
+  Tbps: { fromBytes: 8 / 1e12, label: "Tbps" },
+  GBps: { fromBytes: 1 / 1e9,  label: "GB/s" }
 };
 
-function unitInfo() { return UNIT_DEF[S.unit] || UNIT_DEF.Mbps; }
+function autoUnitFor(bps, mode) {
+  var bits = bps * 8;
+  var bytes = bps;
+  if (mode === "AutoB") {
+    if (bytes < 1e6) return UNIT_DEF.KBps;
+    if (bytes < 1e9) return UNIT_DEF.MBps;
+    return UNIT_DEF.GBps;
+  }
+  if (bits < 1e6) return UNIT_DEF.Kbps;
+  if (bits < 1e9) return UNIT_DEF.Mbps;
+  if (bits < 1e12) return UNIT_DEF.Gbps;
+  return UNIT_DEF.Tbps;
+}
+
+function unitInfo(bps) {
+  if (S.unit === "Auto" || S.unit === "AutoB") {
+    if (bps == null) return UNIT_DEF[S.unit === "AutoB" ? "MBps" : "Mbps"];
+    return autoUnitFor(bps, S.unit);
+  }
+  return UNIT_DEF[S.unit] || UNIT_DEF.Mbps;
+}
 
 function toDisplay(bps) {
-  return bps * unitInfo().fromBytes;
+  return bps * unitInfo(bps).fromBytes;
+}
+
+function decimalsFor(bps) {
+  if (S.decimals === "auto" || S.decimals == null) {
+    var v = toDisplay(bps);
+    if (v >= 100) return 0;
+    if (v >= 10) return 1;
+    return 2;
+  }
+  var d = parseInt(S.decimals, 10);
+  return isFinite(d) ? d : 2;
 }
 
 function fmtSpeed(bps) {
   var v = toDisplay(bps);
   if (!isFinite(v) || v < 0) v = 0;
-  var d = Number(S.decimals);
-  if (!isFinite(d)) d = 2;
-  return v.toFixed(d);
+  return v.toFixed(decimalsFor(bps));
 }
 
-var TICKS = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+function unitLabelFor(bps) { return unitInfo(bps).label; }
+
+var TICKS = [0, 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000];
 var G = { cx: 160, cy: 160, r: 116, start: 135, end: 405 };
-var gaugeEls = { progress: null, needle: null, glow: null };
+var gaugeEls = { progress: null, needle: null };
 
 function polar(cx, cy, r, deg) {
   var a = deg * Math.PI / 180;
@@ -1058,18 +1312,29 @@ function drawChart() {
   var w = dom.chart.clientWidth, h = dom.chart.clientHeight;
   if (!w || !h) return;
 
+  ctx.save();
+
   ctx.clearRect(0, 0, w, h);
+
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.clip();
 
   var accentDl = cssVar("--accent", "#22d3ee");
   var accentUl = cssVar("--accent-2", "#a855f7");
   var gridCol = cssVar("--text-faint", "#6b7a9c");
 
+  var topPad = 16;
+  var bottomPad = 10;
+  var leftPad = 2;
+  var rightPad = 2;
+
   ctx.save();
-  ctx.globalAlpha = 0.18;
+  ctx.globalAlpha = 0.16;
   ctx.strokeStyle = gridCol;
   ctx.lineWidth = 1;
   for (var i = 0; i <= 4; i++) {
-    var yy = 4 + (h - 8) * i / 4;
+    var yy = topPad + (h - topPad - bottomPad) * i / 4;
     ctx.beginPath();
     ctx.moveTo(0, yy);
     ctx.lineTo(w, yy);
@@ -1079,29 +1344,41 @@ function drawChart() {
 
   if (chartPoints.length < 2) {
     if (dom.chartEmpty) dom.chartEmpty.style.display = "";
+    ctx.restore();
     return;
   }
   if (dom.chartEmpty) dom.chartEmpty.style.display = "none";
 
-  var maxV = 0;
-  for (var j = 0; j < chartPoints.length; j++) {
-    if (chartPoints[j].v > maxV) maxV = chartPoints[j].v;
-  }
-  maxV = Math.max(maxV * 1.2, 1);
+  var vals = [];
+  for (var vi = 0; vi < chartPoints.length; vi++) vals.push(chartPoints[vi].v);
+  vals.sort(function (a, b) { return a - b; });
+  var pIdx = Math.floor(vals.length * 0.95);
+  var pVal = vals[pIdx] || 0;
+  var absMax = vals[vals.length - 1] || 0;
+  var maxV = Math.max(pVal * 1.15, absMax * 0.85, 1);
 
   var t0 = chartStart;
   var t1 = chartStart + chartTotalMs;
   var span = Math.max(1, t1 - t0);
 
-  function px(t) { return clamp((t - t0) / span, 0, 1) * w; }
-  function py(v) { return h - 6 - (v / maxV) * (h - 14); }
+  var innerW = w - leftPad - rightPad;
+  var innerH = h - topPad - bottomPad;
+
+  function px(t) {
+    return leftPad + clamp((t - t0) / span, 0, 1) * innerW;
+  }
+  function py(v) {
+    var y = h - bottomPad - (v / maxV) * innerH;
+    return clamp(y, topPad, h - bottomPad);
+  }
 
   ctx.save();
   ctx.fillStyle = gridCol;
-  ctx.globalAlpha = 0.75;
+  ctx.globalAlpha = 0.8;
   ctx.font = "600 10px -apple-system,Segoe UI,Roboto,sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(UNIT_DEF[S.unit].label + " " + fmtSpeed(maxV).replace(/\.00$/, ""), 6, 13);
+  ctx.textBaseline = "top";
+  ctx.fillText(unitLabelFor(maxV) + " " + fmtSpeed(maxV).replace(/\.00$/, ""), 6, 2);
   ctx.restore();
 
   ctx.lineWidth = 2.2;
@@ -1118,12 +1395,12 @@ function drawChart() {
     ctx.lineTo(px(b.t), py(b.v));
     ctx.stroke();
 
-    ctx.globalAlpha = 0.10;
+    ctx.globalAlpha = 0.09;
     ctx.beginPath();
-    ctx.moveTo(px(a.t), h);
+    ctx.moveTo(px(a.t), h - bottomPad);
     ctx.lineTo(px(a.t), py(a.v));
     ctx.lineTo(px(b.t), py(b.v));
-    ctx.lineTo(px(b.t), h);
+    ctx.lineTo(px(b.t), h - bottomPad);
     ctx.closePath();
     ctx.fillStyle = isUp ? accentUl : accentDl;
     ctx.fill();
@@ -1135,6 +1412,8 @@ function drawChart() {
   ctx.arc(px(lastP.t), py(lastP.v), 3.4, 0, Math.PI * 2);
   ctx.fillStyle = lastP.phase === "upload" ? accentUl : accentDl;
   ctx.fill();
+
+  ctx.restore();
 }
 
 function baseUrl() {
@@ -1367,6 +1646,10 @@ var lastMarkTime = 0;
 var rafId = null;
 var wakeLockSentinel = null;
 var expectedTotalMs = 1;
+var currentPhaseIsSpeed = false;
+var dataCapWarned = false;
+var peakDown = 0;
+var peakUp = 0;
 
 function setPhaseLabel(txt) {
   if (dom.gaugePhase) dom.gaugePhase.textContent = txt;
@@ -1379,28 +1662,43 @@ function setProgress(p) {
 function setStatus() {
   if (dom.stEngine) dom.stEngine.textContent = useFetchEngine() ? "Fetch" : "XHR";
   if (dom.stStreams) dom.stStreams.textContent = String(activeStreams);
-  if (dom.stData) dom.stData.textContent = fmtBytes(meter.total);
+  if (dom.stData) {
+    dom.stData.textContent = fmtBytes(meter.total);
+    var capMB = Number(S.dataCapMB) || 0;
+    var capBytes = capMB * 1024 * 1024;
+    if (capMB > 0 && meter.total >= capBytes) {
+      dom.stData.classList.add("warn");
+      if (!dataCapWarned) {
+        dataCapWarned = true;
+        toast("Data usage exceeded " + capMB + " MB warning threshold", "err", 4000);
+      }
+    } else {
+      dom.stData.classList.remove("warn");
+    }
+  }
   if (dom.stTime) dom.stTime.textContent = ((now() - testStartTime) / 1000).toFixed(1) + "s";
 }
 
 function highlightMetric(which) {
-  [dom.mDown, dom.mUp, dom.mPing, dom.mJitter, dom.mLoss].forEach(function (n) {
+  [dom.mDown, dom.mUp, dom.mPing, dom.mJitter, dom.mLoss, dom.mStability].forEach(function (n) {
     if (n) n.classList.remove("active");
   });
   if (which && which.classList) which.classList.add("active");
 }
 
 function resetMetricsUI() {
-  if (dom.vDown) dom.vDown.innerHTML = "—<span class=\"m-unit\">" + unitInfo().label + "</span>";
-  if (dom.vUp) dom.vUp.innerHTML = "—<span class=\"m-unit\">" + unitInfo().label + "</span>";
+  if (dom.vDown) dom.vDown.innerHTML = "—<span class=\"m-unit\">" + unitLabelFor(0) + "</span>";
+  if (dom.vUp) dom.vUp.innerHTML = "—<span class=\"m-unit\">" + unitLabelFor(0) + "</span>";
   if (dom.vPing) dom.vPing.innerHTML = "—<span class=\"m-unit\">ms</span>";
   if (dom.vJitter) dom.vJitter.innerHTML = "—<span class=\"m-unit\">ms</span>";
   if (dom.vLoss) dom.vLoss.innerHTML = "—<span class=\"m-unit\">%</span>";
+  if (dom.vStability) dom.vStability.innerHTML = "—<span class=\"m-unit\"></span>";
   if (dom.sDown) dom.sDown.textContent = "Not tested";
   if (dom.sUp) dom.sUp.textContent = "Not tested";
   if (dom.sPing) dom.sPing.textContent = "Not tested";
   if (dom.sJitter) dom.sJitter.textContent = "Not tested";
   if (dom.sLoss) dom.sLoss.textContent = "Not tested";
+  if (dom.sStability) dom.sStability.textContent = "Not tested";
   highlightMetric(null);
 }
 
@@ -1410,66 +1708,136 @@ function hideGrade() {
   dom.gradeBadge.innerHTML = "";
 }
 
+function computeStability(samples) {
+  if (!samples || samples.length < 4) return null;
+  var vals = [];
+  for (var i = 0; i < samples.length; i++) vals.push(samples[i].v);
+  vals.sort(function (a, b) { return a - b; });
+  var trimmed = vals.slice(0, Math.max(3, Math.floor(vals.length * 0.9)));
+  var q1 = trimmed[Math.floor(trimmed.length * 0.25)];
+  var q3 = trimmed[Math.floor(trimmed.length * 0.75)];
+  var median = trimmed[Math.floor(trimmed.length * 0.5)];
+  if (!median || median <= 0) return null;
+  var iqr = q3 - q1;
+  var cv = iqr / median;
+  var label;
+  if (cv < 0.10) label = "Excellent";
+  else if (cv < 0.20) label = "Very Good";
+  else if (cv < 0.35) label = "Good";
+  else if (cv < 0.55) label = "Fair";
+  else if (cv < 0.85) label = "Variable";
+  else label = "Unstable";
+  return { cv: cv, label: label };
+}
+
 function computeGrade(results) {
   if (!results) return null;
-  var dl = results.download ? results.download.bps / 1e6 : 0;
-  var ul = results.upload ? results.upload.bps / 1e6 : 0;
+
+  var dl = results.download ? (results.download.bps * 8) / 1e6 : 0;
+  var ul = results.upload ? (results.upload.bps * 8) / 1e6 : 0;
   var ping = (results.ping && results.ping.median) ? results.ping.median : 999;
   var jitter = (results.ping && results.ping.jitter) ? results.ping.jitter : 999;
   var score = 0;
 
   if (dl >= 500) score += 40;
-  else if (dl >= 250) score += 36;
-  else if (dl >= 100) score += 31;
-  else if (dl >= 50) score += 25;
-  else if (dl >= 25) score += 18;
-  else if (dl >= 10) score += 12;
-  else if (dl >= 3) score += 6;
-  else if (dl > 0) score += 2;
+  else if (dl >= 250) score += 39;
+  else if (dl >= 100) score += 38;
+  else if (dl >= 50) score += 37;
+  else if (dl >= 25) score += 36;
+  else if (dl >= 10) score += 32;
+  else if (dl >= 5) score += 26;
+  else if (dl >= 2) score += 18;
+  else if (dl >= 1) score += 10;
+  else if (dl > 0) score += 4;
 
-  if (ul >= 100) score += 25;
-  else if (ul >= 50) score += 22;
-  else if (ul >= 25) score += 18;
-  else if (ul >= 10) score += 13;
-  else if (ul >= 5) score += 8;
-  else if (ul >= 1) score += 4;
-  else if (ul > 0) score += 1;
+  if (ul >= 250) score += 25;
+  else if (ul >= 100) score += 24;
+  else if (ul >= 50) score += 23;
+  else if (ul >= 25) score += 22;
+  else if (ul >= 10) score += 20;
+  else if (ul >= 5) score += 16;
+  else if (ul >= 2) score += 12;
+  else if (ul >= 1) score += 7;
+  else if (ul > 0) score += 3;
 
-  if (ping <= 10) score += 20;
-  else if (ping <= 25) score += 18;
-  else if (ping <= 50) score += 15;
-  else if (ping <= 100) score += 11;
-  else if (ping <= 200) score += 6;
-  else if (ping <= 500) score += 2;
+  if (ping <= 15) score += 20;
+  else if (ping <= 30) score += 19;
+  else if (ping <= 50) score += 18;
+  else if (ping <= 80) score += 16;
+  else if (ping <= 120) score += 14;
+  else if (ping <= 200) score += 12;
+  else if (ping <= 350) score += 10;
+  else if (ping <= 600) score += 7;
+  else score += 3;
 
-  if (jitter <= 2) score += 15;
-  else if (jitter <= 5) score += 13;
-  else if (jitter <= 15) score += 9;
-  else if (jitter <= 30) score += 5;
-  else if (jitter <= 60) score += 2;
+  if (jitter <= 5) score += 15;
+  else if (jitter <= 15) score += 14;
+  else if (jitter <= 30) score += 13;
+  else if (jitter <= 60) score += 12;
+  else if (jitter <= 120) score += 10;
+  else if (jitter <= 250) score += 8;
+  else if (jitter <= 500) score += 6;
+  else if (jitter <= 1000) score += 4;
+  else score += 2;
 
   var grade, cls, label;
-  if (score >= 92) { grade = "A+"; cls = "grade-a"; label = "Excellent — perfect for gaming, 4K streaming and large downloads."; }
-  else if (score >= 82) { grade = "A"; cls = "grade-a"; label = "Great — smooth 4K streaming, video calls and online gaming."; }
-  else if (score >= 72) { grade = "B"; cls = "grade-b"; label = "Good — reliable for HD streaming and video calls."; }
-  else if (score >= 60) { grade = "C"; cls = "grade-c"; label = "Fair — fine for browsing, SD streaming and messaging."; }
-  else if (score >= 45) { grade = "D"; cls = "grade-d"; label = "Basic — may struggle with HD video or large uploads."; }
+  if (score >= 88) { grade = "A+"; cls = "grade-a"; label = "Excellent — perfect for gaming, 4K streaming and large downloads."; }
+  else if (score >= 76) { grade = "A"; cls = "grade-a"; label = "Great — smooth 4K streaming, video calls and online gaming."; }
+  else if (score >= 62) { grade = "B"; cls = "grade-b"; label = "Good — reliable for HD streaming and video calls."; }
+  else if (score >= 48) { grade = "C"; cls = "grade-c"; label = "Fair — fine for browsing, SD streaming and messaging."; }
+  else if (score >= 34) { grade = "D"; cls = "grade-d"; label = "Basic — may struggle with HD video or large uploads."; }
   else { grade = "F"; cls = "grade-f"; label = "Slow — limited usability for modern web services."; }
 
   return { score: Math.round(score), grade: grade, cls: cls, label: label };
+}
+
+function getCapabilities(results) {
+  if (!results) return [];
+  var dl = results.download ? (results.download.bps * 8) / 1e6 : 0;
+  var ul = results.upload ? (results.upload.bps * 8) / 1e6 : 0;
+  var ping = (results.ping && results.ping.median) ? results.ping.median : 999;
+  var jitter = (results.ping && results.ping.jitter) ? results.ping.jitter : 999;
+  var caps = [];
+
+  if (dl >= 25) caps.push({ label: "4K Video", ok: true });
+  else if (dl >= 8) caps.push({ label: "HD Video", ok: true });
+  else if (dl >= 3) caps.push({ label: "SD Video", ok: true });
+  else caps.push({ label: "Video", ok: false });
+
+  if (dl >= 25 && ul >= 10 && ping <= 100 && jitter <= 40) caps.push({ label: "Video Calls", ok: true });
+  else caps.push({ label: "Video Calls", ok: false });
+
+  if (dl >= 15 && ul >= 5 && ping <= 80 && jitter <= 30) caps.push({ label: "Gaming", ok: true });
+  else caps.push({ label: "Gaming", ok: false });
+
+  if (dl >= 100 && ul >= 20) caps.push({ label: "Cloud Backup", ok: true });
+  else if (dl >= 50 && ul >= 10) caps.push({ label: "Cloud Sync", ok: true });
+
+  return caps;
 }
 
 function showGrade(results) {
   if (!dom.gradeBadge || !S.showGrade) return;
   var g = computeGrade(results);
   if (!g) return;
+  var caps = S.showCaps ? getCapabilities(results) : [];
+  var capsHtml = "";
+  if (caps.length) {
+    capsHtml = '<div class="g-caps">';
+    for (var i = 0; i < caps.length; i++) {
+      capsHtml += '<span class="cap-tag' + (caps[i].ok ? "" : " no") + '">' +
+        (caps[i].ok ? "✓ " : "✕ ") + escapeHtml(caps[i].label) + '</span>';
+    }
+    capsHtml += '</div>';
+  }
   dom.gradeBadge.className = "grade-badge show " + g.cls;
   dom.gradeBadge.innerHTML =
     '<div class="g-score">' + g.grade + '</div>' +
     '<div class="g-info">' +
       '<div class="g-title">Connection Grade · ' + g.score + '/100</div>' +
       '<div class="g-label">' + escapeHtml(g.label) + '</div>' +
-    '</div>';
+    '</div>' +
+    capsHtml;
 }
 
 function getLocalIPs() {
@@ -1515,6 +1883,8 @@ function getPlatformInfo() {
   if (/Edg\//.test(ua)) { browser = "Edge"; bver = (ua.match(/Edg\/([\d.]+)/) || [])[1] || ""; }
   else if (/OPR\//.test(ua) || /Opera/.test(ua)) { browser = "Opera"; bver = (ua.match(/(?:OPR|Opera)\/([\d.]+)/) || [])[1] || ""; }
   else if (/SamsungBrowser\//.test(ua)) { browser = "Samsung Internet"; bver = (ua.match(/SamsungBrowser\/([\d.]+)/) || [])[1] || ""; }
+  else if (/CriOS\//.test(ua)) { browser = "Chrome iOS"; bver = (ua.match(/CriOS\/([\d.]+)/) || [])[1] || ""; }
+  else if (/FxiOS\//.test(ua)) { browser = "Firefox iOS"; bver = (ua.match(/FxiOS\/([\d.]+)/) || [])[1] || ""; }
   else if (/Chrome\//.test(ua)) { browser = "Chrome"; bver = (ua.match(/Chrome\/([\d.]+)/) || [])[1] || ""; }
   else if (/Firefox\//.test(ua)) { browser = "Firefox"; bver = (ua.match(/Firefox\/([\d.]+)/) || [])[1] || ""; }
   else if (/Safari\//.test(ua) && /Version\//.test(ua)) { browser = "Safari"; bver = (ua.match(/Version\/([\d.]+)/) || [])[1] || ""; }
@@ -1554,7 +1924,7 @@ function renderInfo(info) {
   function add(k, v, cls) {
     if (v == null || v === "" || v === "—") return;
     var safe = escapeHtml(v);
-    rows.push('<div class="info-row' + (cls ? " " + cls : "") + '" data-copy="' + safe + '" title="Click to copy">' +
+    rows.push('<div class="info-row' + (cls ? " " + cls : "") + '" data-copy="' + safe + '" title="Tap to copy">' +
               '<span class="k">' + escapeHtml(k) + '</span>' +
               '<span class="v" title="' + safe + '">' + safe + "</span></div>");
   }
@@ -1574,6 +1944,7 @@ function renderInfo(info) {
   add("Server", info.server || "Cloudflare edge");
   add("Test engine", useFetchEngine() ? "Fetch streams" : "XHR");
   add("Streams", String(S.parallel));
+  add("Data used (last test)", info.dataUsed);
 
   add("Browser", info.browser);
   add("Operating system", info.os);
@@ -1631,15 +2002,15 @@ function fetchConnectionInfo() {
     .catch(function () { return ""; });
 
   return fetchJSON(metaUrl(), null, 6000).then(function (m) {
-    out.ip = m.clientIp || m.ip || m.query || "";
-    out.isp = m.asOrganization || m.isp || m.org || "";
-    out.asn = m.asn || "";
-    out.city = m.city || "";
-    out.region = m.region || m.regionName || "";
-    out.country = m.country || "";
-    out.colo = m.colo || "";
-    out.protocol = m.httpProtocol || "";
-    out.tz = m.timezone || "";
+    out.ip = toStr(m.clientIp || m.ip || m.query || "");
+    out.isp = toStr(m.asOrganization || m.isp || m.org || "");
+    out.asn = toStr(m.asn || "");
+    out.city = toStr(m.city || "");
+    out.region = toStr(m.region || m.regionName || "");
+    out.country = toStr(m.country || "");
+    out.colo = toStr(m.colo || m.coloCode || m.edge || "");
+    out.protocol = toStr(m.httpProtocol || "");
+    out.tz = toStr(m.timezone || "");
     out.server = "Cloudflare edge";
     return out;
   }).catch(function () { return out; }).then(function (info) {
@@ -1648,7 +2019,7 @@ function fetchConnectionInfo() {
     if (!info.ip) {
       chain = chain.then(function (o) {
         return withTimeout(fetchJSON("https://api.ipify.org?format=json", null, 5000), 5500)
-          .then(function (r) { o.ip = r.ip; return o; })
+          .then(function (r) { o.ip = toStr(r.ip); return o; })
           .catch(function () { return o; });
       });
     }
@@ -1658,13 +2029,12 @@ function fetchConnectionInfo() {
         return withTimeout(fetchJSON("https://ipwho.is/", null, 6000), 6500)
           .then(function (r) {
             if (r && r.success !== false) {
-              o.isp = (r.connection && r.connection.isp) || r.isp || o.isp;
-              o.asn = o.asn || (r.connection && r.connection.asn);
-              o.city = o.city || r.city;
-              o.region = o.region || r.region;
-              o.country = o.country || r.country;
-              o.tz = o.tz || (r.timezone && r.timezone.id);
-              o.server = o.server || "Cloudflare edge";
+              o.isp = toStr(o.isp || (r.connection && r.connection.isp) || r.isp || "");
+              o.asn = toStr(o.asn || (r.connection && r.connection.asn) || "");
+              o.city = toStr(o.city || r.city || "");
+              o.region = toStr(o.region || r.region || "");
+              o.country = toStr(o.country || r.country || "");
+              o.tz = toStr(o.tz || (r.timezone && r.timezone.id) || "");
             }
             return o;
           })
@@ -1843,25 +2213,6 @@ function downloadWorker(deadline, signal, onBytes) {
   return step();
 }
 
-function runTransferPhase(kind, durationSec, signal, onProgress) {
-  var durationMs = Math.max(2000, (Number(durationSec) || 10) * 1000);
-  var deadline = now() + durationMs;
-  var n = Math.max(1, Math.min(16, Number(S.parallel) || 6));
-
-  var workers = [];
-  for (var i = 0; i < n; i++) {
-    workers.push(
-      kind === "download"
-        ? downloadWorker(deadline, signal, meterAdd)
-        : uploadWorker(deadline, signal, meterAdd)
-    );
-  }
-
-  return Promise.all(workers).then(function () {
-    onProgress(1);
-  });
-}
-
 function uploadWorker(deadline, signal, onBytes) {
   var chunk = Math.max(minChunkBytes(), 256 * 1024);
   var timeoutMs = (Number(S.timeout) || 20) * 1000;
@@ -1912,6 +2263,25 @@ function uploadWorker(deadline, signal, onBytes) {
   return step();
 }
 
+function runTransferPhase(kind, durationSec, signal, onProgress) {
+  var durationMs = Math.max(2000, (Number(durationSec) || 10) * 1000);
+  var deadline = now() + durationMs;
+  var n = Math.max(1, Math.min(16, Number(S.parallel) || 6));
+
+  var workers = [];
+  for (var i = 0; i < n; i++) {
+    workers.push(
+      kind === "download"
+        ? downloadWorker(deadline, signal, meterAdd)
+        : uploadWorker(deadline, signal, meterAdd)
+    );
+  }
+
+  return Promise.all(workers).then(function () {
+    onProgress(1);
+  });
+}
+
 function computeFinalSpeed(samples) {
   if (!samples || samples.length < 3) {
     if (samples && samples.length) {
@@ -1954,7 +2324,7 @@ function startLoop() {
 
     if (dom.gaugeValue && currentPhaseIsSpeed) {
       dom.gaugeValue.textContent = fmtSpeed(spd);
-      if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+      if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitLabelFor(spd);
       updateGaugeNeedle(disp);
     }
 
@@ -1969,13 +2339,18 @@ function stopLoop() {
   if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 }
 
-var currentPhaseIsSpeed = false;
-
 function sampleTick(phase) {
   var v = meterSpeed(1200);
   chartPoints.push({ t: now(), v: v, phase: phase });
   if (chartPoints.length > 1200) chartPoints.shift();
   phaseSamples.push({ t: now(), v: v });
+  if (phase === "download" && v > peakDown) peakDown = v;
+  if (phase === "upload" && v > peakUp) peakUp = v;
+  if (phase === "download" && dom.sDown) {
+    dom.sDown.textContent = "peak " + fmtSpeed(peakDown) + " " + unitLabelFor(peakDown);
+  } else if (phase === "upload" && dom.sUp) {
+    dom.sUp.textContent = "peak " + fmtSpeed(peakUp) + " " + unitLabelFor(peakUp);
+  }
   drawChart();
 }
 
@@ -2021,6 +2396,9 @@ function startTest() {
   resetMetricsUI();
   hideGrade();
   blobCache = null;
+  dataCapWarned = false;
+  peakDown = 0;
+  peakUp = 0;
 
   dom.btnStart.disabled = true;
   dom.btnStartLbl.textContent = "Testing…";
@@ -2028,7 +2406,7 @@ function startTest() {
   setPhaseLabel("Starting…");
   setProgress(0);
   if (dom.gaugeValue) dom.gaugeValue.textContent = "0.00";
-  if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+  if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitLabelFor(0);
   if (dom.chartEmpty) dom.chartEmpty.style.display = "none";
 
   testStartTime = now();
@@ -2060,7 +2438,8 @@ function startTest() {
     server: S.serverPreset === "custom" ? (S.customBase || "custom") : "Cloudflare edge",
     unit: S.unit,
     userAgent: navigator.userAgent,
-    parallel: S.parallel
+    parallel: S.parallel,
+    preset: getActivePreset()
   };
 
   var metaPromise = S.ipLookup ? fetchConnectionInfo() : Promise.resolve(null);
@@ -2082,7 +2461,6 @@ function startTest() {
       renderInfo(info);
       updateChips(info);
       if (!running) return;
-      renderInfo(info);
     }
   });
 
@@ -2113,7 +2491,7 @@ function startTest() {
           if (dom.sPing) dom.sPing.textContent = "min " + res.min.toFixed(1) + " · max " + res.max.toFixed(1) + " · avg " + res.avg.toFixed(1);
           if (dom.vJitter) dom.vJitter.innerHTML = res.jitter.toFixed(1) + '<span class="m-unit">ms</span>';
           if (dom.sJitter) {
-            var jt = res.jitter < 5 ? "Excellent" : res.jitter < 15 ? "Good" : res.jitter < 30 ? "Fair" : "Poor";
+            var jt = res.jitter < 5 ? "Excellent" : res.jitter < 15 ? "Good" : res.jitter < 40 ? "Fair" : res.jitter < 100 ? "Variable" : "Poor";
             dom.sJitter.textContent = jt;
           }
           if (dom.vLoss) dom.vLoss.innerHTML = res.loss.toFixed(res.loss === 0 ? 0 : 1) + '<span class="m-unit">%</span>';
@@ -2136,7 +2514,7 @@ function startTest() {
     var isDown = (phase === "download");
     highlightMetric(isDown ? dom.mDown : dom.mUp);
     setPhaseLabel(isDown ? "Testing download…" : "Testing upload…");
-    if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+    if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitLabelFor(0);
     updateGaugeNeedle(0);
 
     var dur = isDown ? S.downloadDuration : S.uploadDuration;
@@ -2154,25 +2532,39 @@ function startTest() {
 
       var finalBps = computeFinalSpeed(phaseSamples);
       var elapsed = (now() - (deadline - dur * 1000)) / 1000;
+      var stability = computeStability(phaseSamples);
       var entry = {
         bps: finalBps,
         bytes: meter.total,
         seconds: elapsed,
-        requests: requestCount
+        requests: requestCount,
+        peak: isDown ? peakDown : peakUp,
+        stability: stability ? stability.label : null,
+        cv: stability ? stability.cv : null
       };
 
       if (isDown) {
         results.download = entry;
-        if (dom.vDown) dom.vDown.innerHTML = fmtSpeed(finalBps) + '<span class="m-unit">' + unitInfo().label + "</span>";
-        if (dom.sDown) dom.sDown.textContent = fmtBytes(meter.total) + " transferred";
+        if (dom.vDown) dom.vDown.innerHTML = fmtSpeed(finalBps) + '<span class="m-unit">' + unitLabelFor(finalBps) + "</span>";
+        if (dom.sDown) dom.sDown.textContent = fmtBytes(meter.total) + " · peak " + fmtSpeed(peakDown) + " " + unitLabelFor(peakDown);
         if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(finalBps);
+        if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitLabelFor(finalBps);
         updateGaugeNeedle(toDisplay(finalBps));
+        if (dom.vStability && stability) {
+          dom.vStability.innerHTML = escapeHtml(stability.label) + '<span class="m-unit"></span>';
+          if (dom.sStability) dom.sStability.textContent = "download variance";
+        }
       } else {
         results.upload = entry;
-        if (dom.vUp) dom.vUp.innerHTML = fmtSpeed(finalBps) + '<span class="m-unit">' + unitInfo().label + "</span>";
-        if (dom.sUp) dom.sUp.textContent = fmtBytes(meter.total) + " transferred";
+        if (dom.vUp) dom.vUp.innerHTML = fmtSpeed(finalBps) + '<span class="m-unit">' + unitLabelFor(finalBps) + "</span>";
+        if (dom.sUp) dom.sUp.textContent = fmtBytes(meter.total) + " · peak " + fmtSpeed(peakUp) + " " + unitLabelFor(peakUp);
         if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(finalBps);
+        if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitLabelFor(finalBps);
         updateGaugeNeedle(toDisplay(finalBps));
+        if (dom.vStability && stability && (!results.download || !results.download.stability)) {
+          dom.vStability.innerHTML = escapeHtml(stability.label) + '<span class="m-unit"></span>';
+          if (dom.sStability) dom.sStability.textContent = "upload variance";
+        }
       }
 
       completedWeight += weights[phase];
@@ -2212,6 +2604,11 @@ function finishTest(results) {
   setProgress(1);
   setStatus();
 
+  if (results && results.connection) {
+    results.connection.dataUsed = fmtBytes(meter.total);
+  } else if (results) {
+    results.connection = { dataUsed: fmtBytes(meter.total) };
+  }
   if (results && (results.download || results.upload || results.ping) && S.saveHistory) {
     results.connection = results.connection || {};
     Store.history.unshift(results);
@@ -2229,7 +2626,7 @@ function finishTest(results) {
     else if (results.upload) showBps = results.upload.bps;
     if (showBps) {
       if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(showBps);
-      if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+      if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitLabelFor(showBps);
     }
     setPhaseLabel("Complete");
     showGrade(results);
@@ -2253,15 +2650,53 @@ function abortTest() {
   setPhaseLabel("Cancelling…");
 }
 
+var PRESETS = {
+  quick:    { downloadDuration: 5,  uploadDuration: 5,  pingCount: 6,  parallel: 4 },
+  standard: { downloadDuration: 10, uploadDuration: 10, pingCount: 12, parallel: 6 },
+  thorough: { downloadDuration: 30, uploadDuration: 30, pingCount: 20, parallel: 8 }
+};
+
+function getActivePreset() {
+  for (var k in PRESETS) {
+    if (!PRESETS.hasOwnProperty(k)) continue;
+    var p = PRESETS[k];
+    if (Number(S.downloadDuration) === p.downloadDuration &&
+        Number(S.uploadDuration) === p.uploadDuration &&
+        Number(S.pingCount) === p.pingCount &&
+        Number(S.parallel) === p.parallel) return k;
+  }
+  return "custom";
+}
+
+function applyPreset(name) {
+  var p = PRESETS[name];
+  if (!p) return;
+  S.downloadDuration = p.downloadDuration;
+  S.uploadDuration = p.uploadDuration;
+  S.pingCount = p.pingCount;
+  S.parallel = p.parallel;
+  saveStore();
+  syncPresetButtons();
+  toast("Preset applied: " + name, "ok", 1600);
+}
+
+function syncPresetButtons() {
+  if (!dom.presetRow) return;
+  var active = getActivePreset();
+  $$(".preset-btn", dom.presetRow).forEach(function (b) {
+    b.classList.toggle("active", b.getAttribute("data-preset") === active);
+  });
+}
+
 function summaryText(r) {
   if (!r) return "";
-  var u = UNIT_DEF[r.unit] ? r.unit : S.unit;
-  var f = UNIT_DEF[u].fromBytes;
   var lines = [];
-  lines.push("Donut Interest Speed Test — " + new Date(r.timestamp).toLocaleString());
+  lines.push("Donut Internet Speed Test — " + new Date(r.timestamp).toLocaleString());
   lines.push("-------------------------------------------------");
-  if (r.download) lines.push("Download : " + (r.download.bps * f).toFixed(2) + " " + u);
-  if (r.upload)   lines.push("Upload   : " + (r.upload.bps * f).toFixed(2) + " " + u);
+  if (r.download) lines.push("Download : " + fmtSpeed(r.download.bps) + " " + unitLabelFor(r.download.bps) +
+    (r.download.peak ? " (peak " + fmtSpeed(r.download.peak) + ")" : ""));
+  if (r.upload)   lines.push("Upload   : " + fmtSpeed(r.upload.bps) + " " + unitLabelFor(r.upload.bps) +
+    (r.upload.peak ? " (peak " + fmtSpeed(r.upload.peak) + ")" : ""));
   if (r.ping) {
     lines.push("Ping     : " + r.ping.median.toFixed(1) + " ms (min " + r.ping.min.toFixed(1) + ", max " + r.ping.max.toFixed(1) + ")");
     lines.push("Jitter   : " + r.ping.jitter.toFixed(1) + " ms");
@@ -2279,6 +2714,7 @@ function summaryText(r) {
   if (c.city || c.country) lines.push("Location : " + [c.city, c.region, c.country].filter(Boolean).join(", "));
   if (c.browser) lines.push("Browser  : " + c.browser + (c.os ? " on " + c.os : ""));
   if (c.device) lines.push("Device   : " + c.device);
+  if (c.dataUsed) lines.push("Data     : " + c.dataUsed);
   lines.push("Server   : " + (r.server || "Cloudflare edge"));
   return lines.join("\n");
 }
@@ -2312,25 +2748,139 @@ function download(filename, content, mime) {
   }
 }
 
+function saveChart() {
+  if (!dom.chart) { toast("No chart to save"); return; }
+  try {
+    if (!chartPoints.length) { toast("Run a test first"); return; }
+    var rect = dom.chart.getBoundingClientRect();
+    if (!rect.width || !rect.height) { toast("Chart not visible"); return; }
+    var scale = 2;
+    var exportW = Math.round(rect.width * scale);
+    var exportH = Math.round(rect.height * scale);
+    var off = document.createElement("canvas");
+    off.width = exportW;
+    off.height = exportH;
+    var octx = off.getContext("2d");
+
+    octx.fillStyle = cssVar("--bg", "#070b14");
+    octx.fillRect(0, 0, exportW, exportH);
+
+    var w = exportW, h = exportH;
+    var accentDl = cssVar("--accent", "#22d3ee");
+    var accentUl = cssVar("--accent-2", "#a855f7");
+    var gridCol = cssVar("--text-faint", "#6b7a9c");
+
+    var topPad = 32;
+    var bottomPad = 20;
+    var leftPad = 4;
+    var rightPad = 4;
+
+    octx.save();
+    octx.globalAlpha = 0.16;
+    octx.strokeStyle = gridCol;
+    octx.lineWidth = 1;
+    for (var i = 0; i <= 4; i++) {
+      var yy = topPad + (h - topPad - bottomPad) * i / 4;
+      octx.beginPath();
+      octx.moveTo(0, yy);
+      octx.lineTo(w, yy);
+      octx.stroke();
+    }
+    octx.restore();
+
+    if (chartPoints.length >= 2) {
+      var vals = [];
+      for (var vi = 0; vi < chartPoints.length; vi++) vals.push(chartPoints[vi].v);
+      vals.sort(function (a, b) { return a - b; });
+      var pIdx = Math.floor(vals.length * 0.95);
+      var pVal = vals[pIdx] || 0;
+      var absMax = vals[vals.length - 1] || 0;
+      var maxV = Math.max(pVal * 1.15, absMax * 0.85, 1);
+
+      var t0 = chartStart;
+      var t1 = chartStart + chartTotalMs;
+      var span = Math.max(1, t1 - t0);
+      var innerW = w - leftPad - rightPad;
+      var innerH = h - topPad - bottomPad;
+
+      function px(t) { return leftPad + clamp((t - t0) / span, 0, 1) * innerW; }
+      function py(v) { return clamp(h - bottomPad - (v / maxV) * innerH, topPad, h - bottomPad); }
+
+      octx.lineWidth = 4;
+      octx.lineJoin = "round";
+      octx.lineCap = "round";
+      for (var k = 1; k < chartPoints.length; k++) {
+        var a = chartPoints[k - 1], b = chartPoints[k];
+        var isUp = b.phase === "upload";
+        octx.strokeStyle = isUp ? accentUl : accentDl;
+        octx.globalAlpha = 0.95;
+        octx.beginPath();
+        octx.moveTo(px(a.t), py(a.v));
+        octx.lineTo(px(b.t), py(b.v));
+        octx.stroke();
+
+        octx.globalAlpha = 0.09;
+        octx.beginPath();
+        octx.moveTo(px(a.t), h - bottomPad);
+        octx.lineTo(px(a.t), py(a.v));
+        octx.lineTo(px(b.t), py(b.v));
+        octx.lineTo(px(b.t), h - bottomPad);
+        octx.closePath();
+        octx.fillStyle = isUp ? accentUl : accentDl;
+        octx.fill();
+      }
+      octx.globalAlpha = 1;
+
+      var lastP = chartPoints[chartPoints.length - 1];
+      octx.beginPath();
+      octx.arc(px(lastP.t), py(lastP.v), 6, 0, Math.PI * 2);
+      octx.fillStyle = lastP.phase === "upload" ? accentUl : accentDl;
+      octx.fill();
+
+      octx.fillStyle = gridCol;
+      octx.globalAlpha = 0.8;
+      octx.font = "600 20px -apple-system,Segoe UI,Roboto,sans-serif";
+      octx.textAlign = "left";
+      octx.textBaseline = "top";
+      octx.fillText(unitLabelFor(maxV) + " " + fmtSpeed(maxV).replace(/\.00$/, ""), 12, 6);
+      octx.globalAlpha = 1;
+    }
+
+    var dataUrl = off.toDataURL("image/png");
+    var a2 = document.createElement("a");
+    a2.href = dataUrl;
+    a2.download = "donut-speedtest-chart-" + Date.now() + ".png";
+    document.body.appendChild(a2);
+    a2.click();
+    document.body.removeChild(a2);
+    toast("Chart saved as PNG", "ok");
+  } catch (e) {
+    toast("Failed to save chart", "err");
+  }
+}
+
 function historyToCsv() {
-  var u = S.unit;
-  var f = UNIT_DEF[u].fromBytes;
-  var rows = [["Date", "Download (" + u + ")", "Upload (" + u + ")", "Ping (ms)", "Jitter (ms)", "Loss (%)", "Grade", "IPv4", "IPv6", "Local IPv4", "Local IPv6", "ISP", "City", "Country", "Browser", "OS", "Device", "Server"]];
+  var rows = [["Date", "Download", "Download unit", "Upload", "Upload unit", "Ping (ms)", "Jitter (ms)", "Loss (%)", "Grade", "Score", "IPv4", "IPv6", "Local IPv4", "Local IPv6", "ISP", "City", "Country", "Browser", "OS", "Device", "Data", "Server", "Preset"]];
   Store.history.forEach(function (r) {
     var c = r.connection || {};
     var g = computeGrade(r);
     rows.push([
       new Date(r.timestamp).toISOString(),
-      r.download ? (r.download.bps * f).toFixed(3) : "",
-      r.upload ? (r.upload.bps * f).toFixed(3) : "",
+      r.download ? fmtSpeed(r.download.bps) : "",
+      r.download ? unitLabelFor(r.download.bps) : "",
+      r.upload ? fmtSpeed(r.upload.bps) : "",
+      r.upload ? unitLabelFor(r.upload.bps) : "",
       r.ping ? r.ping.median.toFixed(1) : "",
       r.ping ? r.ping.jitter.toFixed(1) : "",
       r.ping ? r.ping.loss.toFixed(1) : "",
       g ? g.grade : "",
+      g ? g.score : "",
       c.ipv4 || "", c.ipv6 || "", c.localV4 || "", c.localV6 || "",
       c.isp || "", c.city || "", c.country || "",
       c.browser || "", c.os || "", c.device || "",
-      r.server || ""
+      c.dataUsed || "",
+      r.server || "",
+      r.preset || ""
     ]);
   });
   return rows.map(function (row) {
@@ -2464,12 +3014,14 @@ function renderSettings() {
   b1.addEventListener("click", function () { copySummary(false); });
   var b2 = el("button", "btn btn-ghost btn-sm", "Share result");
   b2.addEventListener("click", shareResult);
-  var b3 = el("button", "btn btn-ghost btn-sm", "Export CSV");
-  b3.addEventListener("click", function () {
+  var b3 = el("button", "btn btn-ghost btn-sm", "Save chart");
+  b3.addEventListener("click", saveChart);
+  var b4 = el("button", "btn btn-ghost btn-sm", "Export CSV");
+  b4.addEventListener("click", function () {
     if (!Store.history.length) { toast("No history to export"); return; }
     download("donut-speedtest-history.csv", historyToCsv(), "text/csv;charset=utf-8");
   });
-  actRow.appendChild(b1); actRow.appendChild(b2); actRow.appendChild(b3);
+  actRow.appendChild(b1); actRow.appendChild(b2); actRow.appendChild(b3); actRow.appendChild(b4);
   act.appendChild(actRow);
   root.appendChild(act);
 }
@@ -2478,7 +3030,7 @@ function shareResult() {
   var txt = summaryText(currentResults || Store.history[0] || null);
   if (!txt) { toast("No result to share"); return; }
   if (navigator.share) {
-    navigator.share({ title: "Donut Interest Speed Test result", text: txt })
+    navigator.share({ title: "Donut Internet Speed Test result", text: txt })
       .catch(function () { copySummary(false); });
   } else {
     copySummary(false);
@@ -2518,21 +3070,26 @@ function handleSettingChange(e) {
   if (key === "serverPreset" || key === "customBase" || key === "engine") {
     renderInfo(currentResults && currentResults.connection ? currentResults.connection : {});
   }
-  if (key === "showGrade") {
+  if (key === "showGrade" || key === "showCaps") {
     if (!S.showGrade) hideGrade();
     else if (currentResults) showGrade(currentResults);
+  }
+  if (key === "downloadDuration" || key === "uploadDuration" || key === "pingCount" || key === "parallel") {
+    syncPresetButtons();
+  }
+  if (key === "showPresets") {
+    if (dom.presetRow) dom.presetRow.style.display = S.showPresets ? "" : "none";
   }
 }
 
 function updateUnitsEverywhere() {
-  var u = unitInfo().label;
   if (currentResults) {
-    if (currentResults.download && dom.vDown) dom.vDown.innerHTML = fmtSpeed(currentResults.download.bps) + '<span class="m-unit">' + u + "</span>";
-    if (currentResults.upload && dom.vUp) dom.vUp.innerHTML = fmtSpeed(currentResults.upload.bps) + '<span class="m-unit">' + u + "</span>";
-    if (dom.gaugeUnit) dom.gaugeUnit.textContent = u;
+    if (currentResults.download && dom.vDown) dom.vDown.innerHTML = fmtSpeed(currentResults.download.bps) + '<span class="m-unit">' + unitLabelFor(currentResults.download.bps) + "</span>";
+    if (currentResults.upload && dom.vUp) dom.vUp.innerHTML = fmtSpeed(currentResults.upload.bps) + '<span class="m-unit">' + unitLabelFor(currentResults.upload.bps) + "</span>";
+    if (dom.gaugeUnit && currentResults.download) dom.gaugeUnit.textContent = unitLabelFor(currentResults.download.bps);
   } else {
-    if (dom.vDown) dom.vDown.innerHTML = "—<span class=\"m-unit\">" + u + "</span>";
-    if (dom.vUp) dom.vUp.innerHTML = "—<span class=\"m-unit\">" + u + "</span>";
+    if (dom.vDown) dom.vDown.innerHTML = "—<span class=\"m-unit\">" + unitLabelFor(0) + "</span>";
+    if (dom.vUp) dom.vUp.innerHTML = "—<span class=\"m-unit\">" + unitLabelFor(0) + "</span>";
   }
   drawChart();
 }
@@ -2556,6 +3113,9 @@ function applySettings() {
   document.body.classList.toggle("hide-gauge", !S.showGauge);
   document.body.classList.toggle("hide-chart", !S.showChart);
   document.body.classList.toggle("hide-info", !S.showAdvancedInfo);
+  document.body.classList.toggle("hide-presets", !S.showPresets);
+
+  if (dom.presetRow) dom.presetRow.style.display = S.showPresets ? "" : "none";
 
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", resolveTheme() === "light" ? "#eef2fa" : "#070b14");
@@ -2585,8 +3145,6 @@ function syncThemeButton() {
 function renderHistory() {
   var root = dom.historyBody;
   if (!root) return;
-  var u = S.unit;
-  var f = UNIT_DEF[u].fromBytes;
 
   if (!Store.history.length) {
     root.innerHTML = '<div class="empty-state">' +
@@ -2600,8 +3158,8 @@ function renderHistory() {
     var d = new Date(r.timestamp);
     var dateStr = d.toLocaleDateString([], { month: "short", day: "numeric" }) +
                   "<br>" + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    var dl = r.download ? (r.download.bps * f).toFixed(2) : "—";
-    var ul = r.upload ? (r.upload.bps * f).toFixed(2) : "—";
+    var dl = r.download ? fmtSpeed(r.download.bps) + " " + unitLabelFor(r.download.bps) : "—";
+    var ul = r.upload ? fmtSpeed(r.upload.bps) + " " + unitLabelFor(r.upload.bps) : "—";
     var pg = r.ping ? r.ping.median.toFixed(0) : "—";
     var g = computeGrade(r);
 
@@ -2642,6 +3200,15 @@ function closePanels() {
 function bindEvents() {
   dom.btnStart.addEventListener("click", startTest);
   dom.btnStop.addEventListener("click", abortTest);
+
+  if (dom.presetRow) {
+    dom.presetRow.addEventListener("click", function (e) {
+      var b = e.target.closest(".preset-btn");
+      if (!b) return;
+      var name = b.getAttribute("data-preset");
+      applyPreset(name);
+    });
+  }
 
   $("#btnSettings").addEventListener("click", function () {
     renderSettings();
@@ -2686,7 +3253,7 @@ function bindEvents() {
         var v = r.querySelector(".v");
         if (k && v) lines.push(k.textContent + ": " + v.textContent);
       });
-      var txt = "Donut Interest Speed Test — Connection Details\n" +
+      var txt = "Donut Internet Speed Test — Connection Details\n" +
                 new Date().toLocaleString() + "\n" +
                 "-----------------------------------------------\n" +
                 lines.join("\n");
@@ -2702,6 +3269,11 @@ function bindEvents() {
         toast("All " + rows.length + " details copied", "ok");
       });
     });
+  }
+
+  var saveChartBtn = $("#btnSaveChart");
+  if (saveChartBtn) {
+    saveChartBtn.addEventListener("click", saveChart);
   }
 
   var chips = [dom.chipIp, dom.chipIp6, dom.chipIsp, dom.chipLoc];
@@ -2753,8 +3325,8 @@ function bindEvents() {
       var r = Store.history[idx];
       if (r) {
         currentResults = r;
-        if (r.download && dom.vDown) dom.vDown.innerHTML = fmtSpeed(r.download.bps) + '<span class="m-unit">' + unitInfo().label + "</span>";
-        if (r.upload && dom.vUp) dom.vUp.innerHTML = fmtSpeed(r.upload.bps) + '<span class="m-unit">' + unitInfo().label + "</span>";
+        if (r.download && dom.vDown) dom.vDown.innerHTML = fmtSpeed(r.download.bps) + '<span class="m-unit">' + unitLabelFor(r.download.bps) + "</span>";
+        if (r.upload && dom.vUp) dom.vUp.innerHTML = fmtSpeed(r.upload.bps) + '<span class="m-unit">' + unitLabelFor(r.upload.bps) + "</span>";
         if (r.ping) {
           if (dom.vPing) dom.vPing.innerHTML = r.ping.median.toFixed(1) + '<span class="m-unit">ms</span>';
           if (dom.vJitter) dom.vJitter.innerHTML = r.ping.jitter.toFixed(1) + '<span class="m-unit">ms</span>';
@@ -2767,7 +3339,7 @@ function bindEvents() {
         }
         var bp = r.download ? r.download.bps : (r.upload ? r.upload.bps : 0);
         if (dom.gaugeValue) dom.gaugeValue.textContent = fmtSpeed(bp);
-        if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitInfo().label;
+        if (dom.gaugeUnit) dom.gaugeUnit.textContent = unitLabelFor(bp);
         updateGaugeNeedle(toDisplay(bp));
         showGrade(r);
         setPhaseLabel("Loaded from history");
@@ -2805,6 +3377,7 @@ function bindEvents() {
     saveStore();
     applySettings();
     syncThemeButton();
+    syncPresetButtons();
     renderSettings();
     toast("Settings reset", "ok");
   });
@@ -2830,6 +3403,7 @@ function bindEvents() {
           saveStore();
           applySettings();
           syncThemeButton();
+          syncPresetButtons();
           renderSettings();
           toast("Configuration imported", "ok");
         } catch (e) {
@@ -2869,7 +3443,14 @@ function bindEvents() {
 
   window.addEventListener("orientationchange", function () {
     setTimeout(resizeChart, 250);
+    setTimeout(resizeChart, 600);
   });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", function () {
+      resizeChart();
+    });
+  }
 
   try {
     mq = window.matchMedia("(prefers-color-scheme: light)");
@@ -2896,6 +3477,7 @@ function init() {
   buildGauge();
   applySettings();
   syncThemeButton();
+  syncPresetButtons();
   resetMetricsUI();
   bindEvents();
   resizeChart();
