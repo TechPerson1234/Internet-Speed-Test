@@ -1093,10 +1093,6 @@ function showGrade(results) {
     capsHtml;
 }
 
-/* ==========================================================================
-   Device fingerprint / detection suite
-   ========================================================================== */
-
 function hashStr(s) {
   s = String(s == null ? "" : s);
   var h1 = 0x811c9dc5 >>> 0;
@@ -1112,7 +1108,6 @@ function hashStr(s) {
   return hx(h1) + hx(h2);
 }
 
-/* --- SIGNALS: fingerprint consistency heuristics --- */
 function checkLeopard() {
   var ua = navigator.userAgent || "";
   var issues = [];
@@ -1133,7 +1128,6 @@ function checkLeopard() {
     }
   }
 
-  // UA claims mobile but no touch
   var uaMobile = /Mobile|Android|iPhone|iPad/.test(ua);
   var hasTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
   if (uaMobile && !hasTouch) issues.push("mobile-ua-no-touch");
@@ -1169,7 +1163,6 @@ function checkBull() {
     : { label: "consistent", ok: true };
 }
 
-/* --- HARDWARE --- */
 function getAudioFingerprint() {
   return new Promise(function (resolve) {
     try {
@@ -1284,12 +1277,10 @@ function getHardwareArch() {
     else if (/Linux/.test(platform)) arch = "x86_64";
     else arch = platform || "unknown";
   }
-  // Report like sample: "x86" for typical desktop
   if (arch === "x86_64") return "x86";
   return arch;
 }
 
-/* --- SOFTWARE --- */
 function getTimingResolution() {
   try {
     if (!window.performance || typeof performance.now !== "function") return "unavailable";
@@ -1354,7 +1345,6 @@ function getCanvasFp() {
   } catch (e) { return "unavailable"; }
 }
 
-/* --- NETWORK --- */
 function parseUAInfo() {
   var ua = navigator.userAgent || "";
   var out = { name: "Unknown", os: "Unknown", arch: "unknown", version: "" };
@@ -1431,7 +1421,6 @@ function getWebRTCIPs() {
   });
 }
 
-/* --- BROWSER --- */
 function getTimezoneText() {
   try {
     var d = new Date();
@@ -1524,7 +1513,6 @@ function getMXScore() {
   } catch (e) { return "unavailable"; }
 }
 
-/* --- BOT --- */
 function detectBotSignals() {
   var r = {};
   try { r.hasWebdriver = !!navigator.webdriver; } catch (e) { r.hasWebdriver = false; }
@@ -1545,7 +1533,6 @@ function detectBotSignals() {
   return r;
 }
 
-/* --- LOCATION (from public IP lookup) --- */
 function fetchFpLocation() {
   return withTimeout(fetchJSON("https://ipwho.is/", null, 7000), 7500)
     .then(function (r) {
@@ -1586,7 +1573,6 @@ function fetchFpLocation() {
     .catch(function () { return null; });
 }
 
-/* --- collection & rendering --- */
 var fpCollecting = false;
 
 function collectFingerprint() {
@@ -3166,7 +3152,6 @@ function bindEvents() {
     });
   });
 
-  // Fingerprint rows - click to copy
   if (dom.fpGroups) {
     dom.fpGroups.addEventListener("click", function (e) {
       var row = e.target.closest(".fp-row[data-copy]");
@@ -3467,7 +3452,6 @@ function init() {
 
   renderHistory();
 
-  // Kick off fingerprint collection asynchronously
   if (S.fingerprint) {
     setTimeout(function () { refreshFingerprint(); }, 100);
   }
